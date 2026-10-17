@@ -9,6 +9,8 @@ import { MaterialSwitcher, type ViewMode } from './viewModes';
 export interface ViewerEvents {
   onHover?: (name: string | null) => void;
   onSelect?: (name: string | null) => void;
+  /** Called after every rendered frame, e.g. to move 2D overlays with the camera. */
+  onFrame?: () => void;
 }
 
 /**
@@ -37,8 +39,10 @@ export class Viewer {
   private hovered: THREE.Object3D | null = null;
   private resizeObserver: ResizeObserver;
 
-  constructor(private container: HTMLElement, private events: ViewerEvents = {}) {
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  constructor(private container: HTMLElement, public events: ViewerEvents = {}) {
+    // Transparent canvas: the page's backdrop (paper, blueprint, ...) shows through behind the model.
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    this.renderer.setClearColor(0x000000, 0);
     // Cap the pixel ratio: rendering at 3x on a phone costs a lot for little visible gain.
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -53,7 +57,6 @@ export class Viewer {
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
-    this.scene.background = new THREE.Color(0xe9ebee);
 
     this.keyLight.position.set(3, 5, 2);
     this.keyLight.castShadow = true;
@@ -66,7 +69,8 @@ export class Viewer {
     this.ground.rotation.x = -Math.PI / 2;
     this.ground.receiveShadow = true;
     this.scene.add(this.ground);
-    this.grid = new THREE.GridHelper(1, 10, 0xb8bdc6, 0xd3d7dd);
+    this.grid = new THREE.GridHelper(1, 10, 0x8d989b, 0xc4cbcc);
+    this.grid.visible = false;
     this.scene.add(this.grid);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -115,6 +119,36 @@ export class Viewer {
     this.selectionBox?.update();
   }
 
+  /**
+   * The named part an object belongs to: the top-level child of the model it sits under.
+   * In a Blender export that is the Blender object, so hovering any of its meshes names it.
+   */
+  partOf(object: THREE.Object3D | null): THREE.Object3D | null {
+    if (!object || !this.model) return null;
+    let current: THREE.Object3D = object;
+    while (current.parent && current.parent !== this.model) current = current.parent;
+    return current.parent === this.model ? current : object;
+  }
+
+  /** Find a part by name anywhere in the model (exact match). */
+  findPart(name: string): THREE.Object3D | null {
+    return this.model?.getObjectByName(name) ?? null;
+  }
+
+  /** Project a world-space point to CSS pixels inside the viewport (null when behind the camera). */
+  toScreen(point: THREE.Vector3): { x: number; y: number } | null {
+    const p = point.clone().project(this.camera);
+    if (p.z > 1) return null;
+    const { clientWidth: w, clientHeight: h } = this.container;
+    return { x: ((p.x + 1) / 2) * w, y: ((1 - p.y) / 2) * h };
+  }
+
+  /** Turn shadows off for heavy models (they re-render the scene from the light's view). */
+  setShadows(enabled: boolean): void {
+    this.keyLight.castShadow = enabled;
+    this.ground.visible = enabled;
+  }
+
   setGridVisible(visible: boolean): void {
     this.grid.visible = visible;
   }
@@ -129,6 +163,17 @@ export class Viewer {
     this.camera.updateProjectionMatrix();
     this.controls.target.copy(framing.target);
     this.controls.update();
+  }
+
+  /** Stop rendering (e.g. while another room is on screen) and start again. */
+  pause(): void {
+    this.renderer.setAnimationLoop(null);
+  }
+
+  resume(): void {
+    this.clock.getDelta(); // drop the time spent paused
+    this.resize();
+    this.renderer.setAnimationLoop(() => this.frame());
   }
 
   dispose(): void {
@@ -191,7 +236,7 @@ export class Viewer {
     if (!this.model) return;
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const hit = this.raycaster.intersectObject(this.model, true)[0];
-    this.setHovered(hit ? hit.object : null);
+    this.setHovered(hit ? this.partOf(hit.object) : null);
   }
 
   private setHovered(object: THREE.Object3D | null): void {
@@ -221,6 +266,7 @@ export class Viewer {
     this.mixer?.update(delta);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
+    this.events.onFrame?.();
   }
 }
 

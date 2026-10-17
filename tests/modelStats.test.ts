@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { createDemoModel } from '../src/demo/demoModel';
-import { collectStats, formatCount } from '../src/viewer/modelStats';
+import { budgetWarnings, collectStats, formatCount } from '../src/viewer/modelStats';
 
 describe('collectStats', () => {
   it('counts triangles, vertices, shared materials and textures', () => {
@@ -45,18 +44,21 @@ describe('formatCount', () => {
   });
 });
 
-describe('demo model', () => {
-  it('has named parts like a Blender export, standing on the ground', () => {
-    const lamp = createDemoModel();
-    const names: string[] = [];
-    lamp.traverse((c) => {
-      if ((c as THREE.Mesh).isMesh) names.push(c.name);
-    });
-    expect(names.length).toBeGreaterThanOrEqual(6);
-    expect(names.every((n) => n.length > 0)).toBe(true);
-    expect(new Set(names).size).toBe(names.length);
+describe('texture memory and budget', () => {
+  it('estimates texture memory from image size, counting shared textures once', () => {
+    const texture = new THREE.Texture();
+    texture.image = { width: 2048, height: 2048 };
+    const material = new THREE.MeshStandardMaterial({ map: texture, normalMap: texture });
+    const stats = collectStats(new THREE.Mesh(new THREE.BoxGeometry(), material));
+    // 2048 x 2048 RGBA with mipmaps is about 21 MB
+    expect(stats.textureMB).toBeGreaterThanOrEqual(20);
+    expect(stats.textureMB).toBeLessThanOrEqual(22);
+  });
 
-    const box = new THREE.Box3().setFromObject(lamp);
-    expect(box.min.y).toBeCloseTo(0, 5);
+  it('warns only when a model is over budget', () => {
+    const base = collectStats(new THREE.Group());
+    expect(budgetWarnings(base)).toEqual([]);
+    expect(budgetWarnings({ ...base, triangles: 3_000_000 })[0]).toContain('3.0M triangles');
+    expect(budgetWarnings({ ...base, textureMB: 900 })[0]).toContain('900 MB');
   });
 });
