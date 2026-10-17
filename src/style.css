@@ -8,6 +8,7 @@
   --rule: #b9c5c4;
   --cobalt: #2a3fe0;
   --cobalt-soft: rgba(42, 63, 224, 0.12);
+  --accent: #d9465f;
   --serif: 'Bodoni 72', 'Bodoni MT', Didot, Georgia, 'Noto Serif SC', 'Source Han Serif SC', serif;
   --sans: Inter, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --mono: ui-monospace, Consolas, 'Cascadia Mono', monospace;
@@ -261,27 +262,82 @@ a {
   transform: translateX(-50%);
 }
 
-/* ── Prelude ─────────────────────────────────────────────────────────── */
-.hero-art,
-.hero-art svg {
+/* ── Prelude ─────────────────────────────────────────────────────────
+   Copy on the left, the poster in its own square on the right: the two never overlap. */
+.room-prelude {
+  display: grid;
+  grid-template-columns: minmax(320px, 40%) 1fr;
+  grid-template-rows: 1fr auto;
+}
+
+.plate-host {
+  position: relative;
+  container-type: size;
+}
+
+.hero-art {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 12px 12px 12px 0;
+}
+
+.poster {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+}
+
+.poster .sheet {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  translate: calc(var(--mx, 0) * var(--d) * -30px) calc(var(--my, 0) * var(--d) * -20px);
+  transition: translate 0.7s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-.hero-plate .layer {
-  transform: translate(calc(var(--mx, 0) * var(--depth) * -14px), calc(var(--my, 0) * var(--depth) * -10px));
-  transition: transform 0.25s ease-out;
+.poster .sheet[style*='--blur'] {
+  filter: blur(var(--blur));
 }
 
-.hero-plate .spin {
-  transform-box: fill-box;
+.poster .sheet.spin {
+  animation: sheet-spin 140s linear infinite;
 }
 
-.hero-plate .bird {
+.poster .sheet.spin.rev {
+  animation-duration: 200s;
+  animation-direction: reverse;
+}
+
+@keyframes sheet-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.poster .construct {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.room-prelude:has(.hero-actions a:hover) .construct,
+.hero-art:hover .construct {
+  opacity: 1;
+}
+
+.poster .bird {
   animation: flutter 3.2s ease-in-out infinite;
   animation-delay: calc(var(--i) * -0.37s);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.poster .twinkle {
+  animation: twinkle 2.6s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -292,29 +348,37 @@ a {
   }
 }
 
+@keyframes twinkle {
+  50% {
+    transform: scale(0.55);
+    opacity: 0.6;
+  }
+}
+
 .hero-copy {
-  position: absolute;
-  left: clamp(16px, 6vw, 88px);
-  bottom: clamp(32px, 10vh, 120px);
-  max-width: 520px;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  padding: 0 24px 0 clamp(20px, 5vw, 72px);
 }
 
 .hero-copy h1 {
   margin: 0;
-  font: 700 clamp(44px, 8vw, 104px) / 1 var(--serif);
+  font: 700 clamp(44px, 6.4vw, 96px) / 1 var(--serif);
   letter-spacing: 0.08em;
 }
 
 .hero-en {
-  margin: 10px 0 14px;
+  margin: 12px 0 16px;
   font: 13px var(--mono);
   letter-spacing: 0.28em;
 }
 
 .hero-tagline {
-  margin: 0 0 22px;
+  max-width: 30em;
+  margin: 0 0 24px;
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .hero-actions {
@@ -323,8 +387,44 @@ a {
   gap: 10px;
 }
 
+.hero-caption {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0 24px 28px clamp(20px, 5vw, 72px);
+  font: 14px var(--serif);
+}
+
+.hero-caption span {
+  font: 11px var(--mono);
+  letter-spacing: 0.2em;
+  color: var(--cobalt);
+}
+
+.hero-caption small {
+  font: 9px var(--mono);
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.hero-side {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  margin: 0;
+  writing-mode: vertical-rl;
+  font: 10px var(--mono);
+  letter-spacing: 0.3em;
+  color: var(--muted);
+  translate: 0 -50%;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .hero-plate .bird,
+  .poster .bird,
+  .poster .twinkle,
+  .poster .sheet.spin,
   .room,
   .wipe.run {
     animation: none;
@@ -341,7 +441,7 @@ a {
 
 .plate-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 22px;
 }
 
@@ -368,7 +468,7 @@ a {
 
 .plate .plate-layer {
   transform-box: view-box;
-  transform-origin: 56% 42%;
+  transform-origin: 50% 46.25%;
   transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -765,6 +865,34 @@ a {
   display: none;
 }
 
+/* Portrait screens (phones, upright tablets): poster on top, copy below. */
+@media (max-width: 720px), (max-aspect-ratio: 4/5) {
+  .room-prelude {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .hero-art {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 8px;
+  }
+
+  .hero-copy {
+    grid-row: 2;
+    padding: 4px 20px 24px;
+  }
+
+  .hero-tagline {
+    margin-bottom: 16px;
+  }
+
+  .hero-caption,
+  .hero-side {
+    display: none;
+  }
+}
+
 /* ── Phones ──────────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   :root {
@@ -805,14 +933,7 @@ a {
     display: none;
   }
 
-  .hero-copy {
-    right: 0;
-    left: 0;
-    bottom: 0;
-    max-width: none;
-    padding: 64px 20px 28px;
-    background: linear-gradient(transparent, var(--paper) 38%);
-  }
+
 
   .hover-label {
     display: none;

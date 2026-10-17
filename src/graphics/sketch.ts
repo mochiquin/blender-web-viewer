@@ -55,13 +55,14 @@ export function smoothPath(points: Point[], closed = false): string {
  * A ring drawn in one stroke: the radius breathes slowly (two low-frequency sines, so it
  * wobbles rather than jitters) and the line runs a little past where it started.
  */
-export function ring(cx: number, cy: number, radius: number, rand: Random, wobble = 1.5): string {
+export function ring(cx: number, cy: number, radius: number, rand: Random, wobble = 1.5, squash = 1): string {
   const start = rand() * TAU;
   const sweep = TAU + 0.12 + rand() * 0.3;
-  return arc(cx, cy, radius, start, start + sweep, rand, wobble);
+  return arc(cx, cy, radius, start, start + sweep, rand, wobble, squash);
 }
 
-export function arc(cx: number, cy: number, radius: number, from: number, to: number, rand: Random, wobble = 1.2): string {
+/** `squash` < 1 flattens the arc vertically, e.g. for a halo seen at an angle. */
+export function arc(cx: number, cy: number, radius: number, from: number, to: number, rand: Random, wobble = 1.2, squash = 1): string {
   const phaseA = rand() * TAU;
   const phaseB = rand() * TAU;
   const steps = Math.max(8, Math.ceil((Math.abs(to - from) * radius) / 24));
@@ -69,7 +70,7 @@ export function arc(cx: number, cy: number, radius: number, from: number, to: nu
   for (let i = 0; i <= steps; i++) {
     const a = from + ((to - from) * i) / steps;
     const r = radius + (Math.sin(a * 2 + phaseA) * 0.65 + Math.sin(a * 5 + phaseB) * 0.35) * wobble;
-    points.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    points.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r * squash]);
   }
   return smoothPath(points);
 }

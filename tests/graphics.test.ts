@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { heroPlate, projectPlate } from '../src/graphics/plates';
+import { heroPoster, projectPlate } from '../src/graphics/plates';
+import { applyWeight, weightFor } from '../src/graphics/sheets';
 import { brush, hashSeed, ring, rule, seeded, sweep } from '../src/graphics/sketch';
 import { PROJECTS, type Project } from '../src/projects';
 
@@ -74,9 +75,35 @@ describe('plates', () => {
     expect(svg).toContain('&lt;script&gt;&amp;');
   });
 
-  it('draws the hero poster without broken numbers', () => {
-    const svg = heroPlate();
-    expect(svg).not.toMatch(/NaN|undefined|Infinity/);
-    expect(svg).toContain('textPath');
+  it('draws the hero poster as a stack of sheets without broken numbers', () => {
+    const html = heroPoster();
+    expect(html).not.toMatch(/NaN|undefined|Infinity/);
+    expect(html).toContain('textPath');
+    expect((html.match(/<svg class="sheet/g) ?? []).length).toBeGreaterThanOrEqual(8);
+    const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const ref of html.matchAll(/(?:url\(#|href="#)([^)"]+)/g)) expect(ids).toContain(ref[1]);
+  });
+
+  it('keeps every element of a card inside the card', () => {
+    for (const project of PROJECTS) {
+      const svg = projectPlate(project);
+      for (const m of svg.matchAll(/<text x="([\d.]+)" y="([\d.]+)"/g)) {
+        expect(Number(m[1])).toBeLessThanOrEqual(600);
+        expect(Number(m[2])).toBeLessThanOrEqual(800);
+      }
+    }
+  });
+});
+
+describe('sheets', () => {
+  it('draws far sheets thinner and near sheets heavier', () => {
+    expect(weightFor(0.1)).toBeLessThan(weightFor(0.5));
+    expect(weightFor(0.5)).toBeLessThan(weightFor(1.2));
+  });
+
+  it('scales stroke widths by depth', () => {
+    expect(applyWeight('<path stroke-width="2" />', 1.2)).toBe('<path stroke-width="3.10" />');
+    expect(applyWeight('<path stroke-width="2" />', 0.1)).toBe('<path stroke-width="1.20" />');
   });
 });

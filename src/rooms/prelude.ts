@@ -1,4 +1,4 @@
-import { heroPlate } from '../graphics/plates';
+import { heroPoster } from '../graphics/plates';
 import { SITE } from '../site';
 import { el, type Room } from './room';
 
@@ -7,7 +7,7 @@ export function createPrelude(): Room {
   const element = el('section', 'room room-prelude');
   element.dataset.room = 'prelude';
   element.innerHTML = `
-    <div class="hero-art">${heroPlate()}</div>
+    <div class="hero-art plate-host">${heroPoster()}</div>
     <div class="hero-copy">
       <p class="eyebrow">FAN ARCHIVE · RECORD 00</p>
       <h1></h1>
@@ -17,7 +17,9 @@ export function createPrelude(): Room {
         <a class="button primary" href="#/catalogue">进入图录 <small>CATALOGUE</small></a>
         <a class="button" href="#/inspect">检视室 <small>INSPECT</small></a>
       </div>
-    </div>`;
+    </div>
+    <p class="hero-caption"><span>01 — 03</span>以图为录 · 以模为证<small>SANCTUM · FIGURE · ARMAMENT</small></p>
+    <p class="hero-side" aria-hidden="true">FAITH. &nbsp; FORM. &nbsp; CRAFT.</p>`;
   element.querySelector('h1')!.textContent = SITE.title;
   element.querySelector('.hero-en')!.textContent = SITE.titleEn;
   element.querySelector('.hero-tagline')!.textContent = SITE.tagline;
