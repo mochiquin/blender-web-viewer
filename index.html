@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Interactive web viewer for Blender models" />
+    <title>Blender Web Viewer</title>
+  </head>
+  <body>
+    <main id="app">
+      <div id="viewport" aria-live="polite"></div>
+
+      <aside id="info" class="card">
+        <h1 id="project-title">Loading…</h1>
+        <p id="project-tools" class="muted"></p>
+        <p id="project-description"></p>
+        <dl id="stats"></dl>
+      </aside>
+
+      <div id="hover-label" class="pill" hidden></div>
+      <div id="status" class="pill" role="status" hidden></div>
+
+      <div id="drop-overlay" hidden>
+        <p>Drop a <strong>.glb</strong> exported from Blender</p>
+      </div>
+      <p id="drop-hint" class="muted">Drag a .glb file onto the page to preview it</p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

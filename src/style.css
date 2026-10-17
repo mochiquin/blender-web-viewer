@@ -1,0 +1,146 @@
+:root {
+  --ink: #1d2330;
+  --muted: #5d6675;
+  --card: rgba(255, 255, 255, 0.86);
+  --accent: #ff7a1a;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #e9ebee;
+}
+
+#viewport {
+  position: absolute;
+  inset: 0;
+}
+
+#viewport canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.card {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: min(320px, calc(100% - 32px));
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--card);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 18px rgba(20, 30, 50, 0.08);
+}
+
+.card h1 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.card p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+#stats dt {
+  color: var(--muted);
+}
+
+#stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  position: absolute;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+#hover-label {
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#status {
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#status.error {
+  background: #b3261e;
+}
+
+#drop-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+#drop-overlay {
+  position: absolute;
+  inset: 12px;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--accent);
+  border-radius: 16px;
+  background: rgba(255, 122, 26, 0.08);
+  font-size: 18px;
+  pointer-events: none;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .card {
+    top: auto;
+    bottom: 16px;
+    padding: 12px 14px;
+  }
+
+  #project-description,
+  #stats {
+    display: none;
+  }
+
+  #drop-hint {
+    display: none;
+  }
+}
