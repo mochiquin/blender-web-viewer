@@ -1,4 +1,5 @@
-import { heroPoster } from '../graphics/plates';
+import { HERO_NODES, heroPoster } from '../graphics/plates';
+import { attachPosterGuides } from '../ui/posterGuides';
 import { SITE } from '../site';
 import { el, type Room } from './room';
 
@@ -23,6 +24,7 @@ export function createPrelude(): Room {
   element.querySelector('h1')!.textContent = SITE.title;
   element.querySelector('.hero-en')!.textContent = SITE.titleEn;
   element.querySelector('.hero-tagline')!.textContent = SITE.tagline;
+  const guides = attachPosterGuides(element, element.querySelector<HTMLElement>('.poster')!, HERO_NODES);
 
   let frame = 0;
   const onMove = (e: PointerEvent) => {
@@ -41,6 +43,7 @@ export function createPrelude(): Room {
     },
     leave() {
       window.removeEventListener('pointermove', onMove);
+      guides.clear();
     },
   };
 }
