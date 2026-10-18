@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1440" width="2560" height="1440">
+  <!-- TEMPLATE, never shown on the site. Backdrops sit behind the 3D model in the inspect room.
+       Image: 2560 x 1440 .webp / .jpg / .png. Loop: 5-10 s seamless .webm or .mp4 (e.g. from TouchDesigner).
+       The file name becomes the backdrop id, e.g. cloister.webp -> "cloister". Add "-dark" to the name
+       (night-dark.webp) when the image is dark, so guide lines switch to light ink. -->
+  <rect width="2560" height="1440" fill="#e6ece9"/>
+  <rect x="32" y="32" width="560" height="640" fill="#d5ddda"/>
+  <rect x="1968" y="32" width="560" height="440" fill="#d5ddda"/>
+  <rect x="1000" y="1240" width="560" height="170" fill="#d5ddda"/>
+  <ellipse cx="1280" cy="720" rx="700" ry="460" fill="none" stroke="#2a3fe0" stroke-width="4" stroke-dasharray="16 10"/>
+  <g font-family="monospace" fill="#1f3036">
+    <text x="64" y="90" font-size="34">INFO CARD</text>
+    <text x="2000" y="90" font-size="34">PANEL</text>
+    <text x="1040" y="1300" font-size="34">STRIP</text>
+    <text x="1280" y="720" font-size="44" text-anchor="middle">model sits here (keep it calm)</text>
+    <text x="1280" y="780" font-size="30" text-anchor="middle">BACKDROP TEMPLATE · 2560 × 1440 · name-dark.webp for dark images</text>
+  </g>
+</svg>

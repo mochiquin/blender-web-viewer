@@ -76,7 +76,7 @@ npm run dev        # http://localhost:5173
      description: 'Gothic nave modelled in Blender, textures in Substance 3D Painter.',
      tools: ['Blender', 'Substance 3D Painter'],
      file: 'sanctum.glb',              // replaces the built-in placeholder
-     backdrop: 'blueprint',            // 'paper' | 'blueprint' | 'halftone' | 'dusk'
+     backdrop: 'blueprint',            // 'paper' | 'blueprint' | 'halftone' | 'dusk' | a file in src/assets/backdrops/
      annotations: [
        { part: 'Rose window', label: '玫瑰花窗', note: 'ROSE WINDOW' },  // part = Blender object name
      ],
@@ -87,6 +87,20 @@ Site titles, links and the disclaimer live in `src/site.ts`.
 
 **Keep web models light:** under ~10 MB and a few hundred thousand triangles; 1K–2K textures
 (WebP or KTX2). Retopologise sculpts and bake detail into normal maps.
+
+## Art slots
+
+Drop image files into `src/assets/` and they appear on the next build or dev reload; no code changes.
+Files with `.placeholder.` in the name are size and layout templates and are never shown.
+Full rules (in English and Chinese) are in [`src/assets/README.md`](src/assets/README.md).
+
+| Folder | Name files like | Size | Used for |
+| --- | --- | --- | --- |
+| `src/assets/poster/` | `20-spire.webp` (00 far … 99 near) | 1000 × 1000, transparent | Layers stacked into the hero poster, with parallax by number |
+| `src/assets/covers/` | `sanctum.webp` (the entry id) | 1040 × 1040 | Replaces the drawn art on that entry's plate |
+| `src/assets/backdrops/` | `cloister.webp`, `night-dark.webp`, `loop.webm` | 2560 × 1440 | Extra backdrops in the inspect panel; `-dark` switches UI to light ink |
+
+To make an entry open on a custom backdrop, set `backdrop: 'cloister'` (the file name) in `src/projects.ts`.
 
 ## Assets
 
@@ -103,6 +117,7 @@ src/
   projects.ts             catalogue entries, categories, backdrops
   router.ts               hash routes (#/catalogue, #/inspect/<id>, ...)
   rooms/                  prelude, catalogue, inspect, about
+  assets/                 art slots: poster layers, covers, backdrops (+ templates)
   graphics/
     sketch.ts             seeded hand-drawn SVG primitives
     plates.ts             catalogue plates and hero poster
@@ -127,7 +142,7 @@ e2e/                      browser tests (Playwright, real WebGL in Chromium)
 ## Testing
 
 ```bash
-npm test           # 88 unit tests: graphics, plates, guides, layout, router, scenes, explode, stats
+npm test           # 95 unit tests: graphics, plates, art slots, guides, layout, router, scenes, explode, stats
 npm run test:e2e   # 13 browser tests: every room, every preset, panel controls, guides, grain,
                    # drag-and-drop, file chooser, rejected files, phone layout
 ```

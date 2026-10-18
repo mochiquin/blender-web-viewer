@@ -1,3 +1,4 @@
+import { COVERS } from '../assets';
 import { projectPlate } from '../graphics/plates';
 import { CATEGORIES, type Category, type Project } from '../projects';
 import { routeHref } from '../router';
@@ -32,7 +33,7 @@ export function createCatalogue(projects: Project[]): Room {
     const card = el('a', 'plate-card');
     card.href = routeHref({ room: 'inspect', id: project.id });
     card.dataset.category = project.category;
-    card.innerHTML = projectPlate(project);
+    card.innerHTML = projectPlate(project, {}, COVERS[project.id]);
     grid.append(card);
   }
 

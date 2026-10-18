@@ -37,7 +37,9 @@ export interface Project {
 }
 
 export const BACKDROPS = ['paper', 'blueprint', 'halftone', 'dusk'] as const;
-export type BackdropId = (typeof BACKDROPS)[number];
+export type BuiltInBackdrop = (typeof BACKDROPS)[number];
+/** A built-in backdrop, or the name of a file in src/assets/backdrops/ (without extension). */
+export type BackdropId = BuiltInBackdrop | (string & {});
 
 export const PROJECTS: Project[] = [
   {

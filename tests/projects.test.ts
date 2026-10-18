@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { BACKDROPS, CATEGORIES, findProject, modelUrl, PROJECTS } from '../src/projects';
 import { isModelFile } from '../src/ui/dropzone';
+import { CUSTOM_BACKDROPS } from '../src/assets';
 
 describe('project catalogue', () => {
   it('has unique ids and record numbers', () => {
@@ -17,7 +18,7 @@ describe('project catalogue', () => {
   it('gives every entry a known category, backdrop and something to show', () => {
     for (const p of PROJECTS) {
       expect(Object.keys(CATEGORIES)).toContain(p.category);
-      if (p.backdrop) expect(BACKDROPS).toContain(p.backdrop);
+      if (p.backdrop) expect([...BACKDROPS, ...CUSTOM_BACKDROPS.map((b) => b.id)]).toContain(p.backdrop);
       expect(Boolean(p.file || p.preset), p.id).toBe(true);
     }
   });

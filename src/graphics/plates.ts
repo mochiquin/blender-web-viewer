@@ -16,6 +16,7 @@ import {
   uiWindow,
   type Ink,
 } from './collage';
+import type { PosterLayer } from '../assets/slots';
 import { renderSheets, type Sheet } from './sheets';
 import { arc, brush, hashSeed, n, ring, rule, seeded, sweep, type Random } from './sketch';
 
@@ -86,7 +87,7 @@ function emblem(category: Project['category'], cx: number, cy: number, r: number
  * A catalogue card, 600 × 800. Header band (number + category), art square, footer (title,
  * record line, barcode). Each zone owns its space, so the pieces never collide.
  */
-export function projectPlate(project: Project, size: { width?: number; height?: number } = {}): string {
+export function projectPlate(project: Project, size: { width?: number; height?: number } = {}, cover?: string): string {
   const rand = seeded(hashSeed(project.id));
   const id = `pl-${project.id}`;
   const cat = CATEGORIES[project.category];
@@ -101,7 +102,7 @@ export function projectPlate(project: Project, size: { width?: number; height?: 
 <radialGradient id="${id}-fade"><stop offset=".3" stop-color="#fff" /><stop offset="1" stop-color="#fff" stop-opacity="0" /></radialGradient>
 <mask id="${id}-mask"><rect width="${W}" height="${H}" fill="url(#${id}-fade)" /></mask>`;
 
-  const art = `
+  const drawn = `
 <circle cx="${cx + 80}" cy="${cy - 70}" r="210" fill="url(#${id}-dots)" mask="url(#${id}-mask)" opacity=".28" />
 <g class="plate-layer plate-far"><circle cx="${cx}" cy="${cy}" r="${disc}" fill="${C.cobalt}" /></g>
 <g class="plate-layer plate-mid" fill="none" stroke="${C.ink}">
@@ -114,6 +115,13 @@ export function projectPlate(project: Project, size: { width?: number; height?: 
 <g class="plate-layer plate-near" fill="none" stroke="${C.paper}" stroke-width="2.2" stroke-linejoin="round">${emblem(project.category, cx, cy, disc, rand)}</g>
 <path d="${brush(sweep(70, cy + disc + 20, 530, cy + disc - 40, 16), 14)}" fill="${C.cobalt}" opacity=".9" />
 <path d="${sparkle(cx + disc + 30, cy - disc - 10, 12)}" fill="${C.accent}" />`;
+
+  // A cover image from src/assets/covers/ replaces the drawn emblem in the art square.
+  const art = cover
+    ? `<clipPath id="${id}-art"><rect x="40" y="110" width="520" height="520" /></clipPath>
+<image href="${esc(cover)}" x="40" y="110" width="520" height="520" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id}-art)" class="plate-cover" />
+<rect x="40" y="110" width="520" height="520" fill="none" stroke="${C.ink}" stroke-width="1.2" />`
+    : drawn;
 
   const header = `
 <text x="40" y="96" font-family="${SERIF}" font-size="96" font-weight="700" fill="none" stroke="${C.ink}" stroke-width="1.6">${project.number}</text>
@@ -141,6 +149,8 @@ ${crops(16, 16, W - 16, H - 16, C.ink, 18, 1)}
 export interface HeroOptions {
   /** Big outlined numeral in the corner. */
   mark?: string;
+  /** Artwork layers from src/assets/poster/, merged into the stack by depth. */
+  layers?: PosterLayer[];
   /** Text running around the disc. */
   legend?: string;
 }
@@ -149,7 +159,7 @@ export interface HeroOptions {
  * The hero poster: a 1000 × 1000 stack of sheets centred on a cobalt disc. Far sheets are
  * hairline and blurred; near sheets are heavy and move most with the pointer.
  */
-export function heroPoster({ mark = '01', legend = 'TRAVELS · A FAN 3D ARCHIVE · SANCTUM · FIGURE · ARMAMENT · ' }: HeroOptions = {}): string {
+export function heroPoster({ mark = '01', legend = 'TRAVELS · A FAN 3D ARCHIVE · SANCTUM · FIGURE · ARMAMENT · ', layers = [] }: HeroOptions = {}): string {
   const rand = seeded(7);
   const cx = 560;
   const cy = 500;
@@ -261,7 +271,16 @@ ${(
 <text x="${cx + disc + 20}" y="${cy - disc}" font-family="${MONO}" font-size="12" fill="${C.accent}">HALO 340 × 75</text>`,
     },
   ];
-  return renderSheets(sheets, 'hero-poster', 'Hero poster: a cobalt disc with rings, rays and a halo');
+  // Artwork layers slot in among the drawn sheets by depth; the construction overlay stays on top.
+  const construct = sheets.filter((s) => s.className === 'construct');
+  const art: Sheet[] = layers.map((layer) => ({
+    depth: layer.depth,
+    blur: layer.blur,
+    className: 'art',
+    body: `<image href="${esc(layer.url)}" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid meet" data-layer="${esc(layer.key)}" />`,
+  }));
+  const stack = [...sheets.filter((s) => s.className !== 'construct'), ...art].sort((a, b) => a.depth - b.depth);
+  return renderSheets([...stack, ...construct], 'hero-poster', 'Hero poster: a cobalt disc with rings, rays and a halo');
 }
 
 /** Points along an arc (no wobble), for brush strokes that follow a ring. */

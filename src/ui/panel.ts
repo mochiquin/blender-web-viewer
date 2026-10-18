@@ -1,9 +1,10 @@
 import GUI from 'lil-gui';
-import { BACKDROPS, type BackdropId } from '../projects';
+import { CUSTOM_BACKDROPS } from '../assets';
+import { BACKDROPS, type BackdropId, type BuiltInBackdrop } from '../projects';
 import type { Viewer } from '../viewer/Viewer';
 import { VIEW_MODE_LABELS, VIEW_MODES, type ViewMode } from '../viewer/viewModes';
 
-export const BACKDROP_LABELS: Record<BackdropId, string> = {
+export const BACKDROP_LABELS: Record<BuiltInBackdrop, string> = {
   paper: '纸面 Paper',
   blueprint: '图纸 Blueprint',
   halftone: '网点 Halftone',
@@ -37,7 +38,10 @@ export function createPanel(container: HTMLElement, viewer: Viewer, handlers: Pa
   gui.add(state, 'viewMode', modeOptions).name('Shading').onChange((m: ViewMode) => viewer.setViewMode(m));
   gui.add(state, 'explode', 0, 1, 0.01).name('Explode').onChange((v: number) => viewer.setExplode(v));
   gui.add(state, 'callouts').name('Callouts').onChange(handlers.onCallouts);
-  const backdropOptions = Object.fromEntries(BACKDROPS.map((b) => [BACKDROP_LABELS[b], b]));
+  const backdropOptions = Object.fromEntries([
+    ...BACKDROPS.map((b) => [BACKDROP_LABELS[b], b]),
+    ...CUSTOM_BACKDROPS.map((b) => [`自定义 ${b.id}`, b.id]),
+  ]);
   gui.add(state, 'backdrop', backdropOptions).name('Backdrop').onChange(handlers.onBackdrop);
 
   const lighting = gui.addFolder('Lighting').close();

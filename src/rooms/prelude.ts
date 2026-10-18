@@ -1,3 +1,4 @@
+import { POSTER_LAYERS } from '../assets';
 import { heroPoster } from '../graphics/plates';
 import { SITE } from '../site';
 import { el, type Room } from './room';
@@ -7,7 +8,7 @@ export function createPrelude(): Room {
   const element = el('section', 'room room-prelude');
   element.dataset.room = 'prelude';
   element.innerHTML = `
-    <div class="hero-art plate-host">${heroPoster()}</div>
+    <div class="hero-art plate-host">${heroPoster({ layers: POSTER_LAYERS })}</div>
     <div class="hero-copy">
       <p class="eyebrow">FAN ARCHIVE · RECORD 00</p>
       <h1></h1>

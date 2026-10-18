@@ -1,3 +1,4 @@
+import { COVERS, CUSTOM_BACKDROPS } from '../assets';
 import { projectPlate } from '../graphics/plates';
 import { CATEGORIES, findProject, modelUrl, type BackdropId, type Project } from '../projects';
 import { routeHref, type Route } from '../router';
@@ -57,7 +58,7 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
   // Thumbnail strip: one mini plate per entry plus the local slot.
   const strip = $('.strip');
   for (const project of projects) {
-    const link = el('a', 'strip-item', projectPlate(project, { width: 150, height: 200 }));
+    const link = el('a', 'strip-item', projectPlate(project, { width: 150, height: 200 }, COVERS[project.id]));
     link.href = routeHref({ room: 'inspect', id: project.id });
     link.dataset.id = project.id;
     link.title = project.title;
@@ -92,9 +93,24 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
     return viewer;
   }
 
+  const backdropArt = $('.backdrop-art');
+
+  /** Built-in backdrops are pure CSS; custom ones show the image or loop from src/assets/backdrops/. */
   function setBackdrop(id: BackdropId) {
-    backdrop.dataset.backdrop = id;
-    element.toggleAttribute('data-backdrop-dark', id === 'dusk');
+    const custom = CUSTOM_BACKDROPS.find((b) => b.id === id);
+    backdrop.dataset.backdrop = custom ? 'custom' : id;
+    backdropArt.replaceChildren();
+    if (custom) {
+      const media = document.createElement(custom.kind === 'video' ? 'video' : 'img');
+      media.src = custom.url;
+      media.className = 'backdrop-media';
+      media.setAttribute('alt', '');
+      if (media instanceof HTMLVideoElement) {
+        media.autoplay = media.loop = media.muted = media.playsInline = true;
+      }
+      backdropArt.append(media);
+    }
+    element.toggleAttribute('data-backdrop-dark', id === 'dusk' || id.endsWith('-dark'));
   }
 
   function setState(state: 'loading' | 'ready' | 'error' | 'empty') {
