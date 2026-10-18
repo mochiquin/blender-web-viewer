@@ -37,9 +37,8 @@ opened in the browser and never uploaded.
   a label column, laid out so labels never overlap or hide behind panels
 - **Graphic guidance**: corner-bracket frames around key parts (the hovered one in cobalt with an
   X / Y / Z readout and cross-hairs), a dashed chain joining the parts with real distances in metres,
-  and a pointer reticle that reaches out to the nearest parts; on the prelude the reticle snaps to
-  the poster's key points
-- **Print grain**: a faint drifting grain over the whole site (paused for reduced motion)
+  and a pointer reticle that reaches out to the nearest parts
+- **Print grain**: a faint drifting grain over the 3D view (paused for reduced motion)
 - **Generated graphics**: plates and the hero are drawn from a seeded "hand-drawn" vocabulary
   (wobbling rings that overshoot, bowed rules, tapered brush strokes), so they look the same every load
 - **Backdrops**: paper, blueprint grid, halftone sun and dusk, set per entry or switched live
@@ -111,7 +110,6 @@ src/
   ui/
     annotations.ts        callouts, part frames, measured chain and reticle over the 3D view
     guides.ts             bracket frames, nearest-node search, reticle geometry
-    posterGuides.ts       pointer guides over the hero poster
     labelLayout.ts        callout placement (no overlaps, clear of panels)
     panel.ts              lil-gui inspect panel
     dropzone.ts           drag and drop
@@ -129,8 +127,8 @@ e2e/                      browser tests (Playwright, real WebGL in Chromium)
 ## Testing
 
 ```bash
-npm test           # 89 unit tests: graphics, plates, guides, layout, router, scenes, explode, stats
-npm run test:e2e   # 14 browser tests: every room, every preset, panel controls, guides, grain,
+npm test           # 88 unit tests: graphics, plates, guides, layout, router, scenes, explode, stats
+npm run test:e2e   # 13 browser tests: every room, every preset, panel controls, guides, grain,
                    # drag-and-drop, file chooser, rejected files, phone layout
 ```
 

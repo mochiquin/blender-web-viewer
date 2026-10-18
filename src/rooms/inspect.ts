@@ -23,6 +23,7 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
     <div class="backdrop" data-backdrop="paper"><div class="backdrop-art"></div></div>
     <div class="stage">
       <div class="viewport"></div>
+      <div class="grain" aria-hidden="true"></div>
     </div>
     <aside class="card info">
       <p class="eyebrow record"></p>

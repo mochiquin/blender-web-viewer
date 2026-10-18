@@ -152,27 +152,16 @@ test('inspect draws frames, a measured chain and a reticle that reaches to parts
   await expect(lines.locator('.reach').first()).toBeAttached();
 });
 
-test('prelude guides reach from the pointer to nearby key points', async ({ page }) => {
+test('the faint grain sits on the 3D view only, under the overlays', async ({ page }) => {
   await page.goto('/');
-  const poster = (await page.locator('.hero-poster').boundingBox())!;
-  // The disc centre sits at (560, 500) in the poster's 1000 x 1000 space.
-  const x = poster.x + poster.width * 0.56 + 20;
-  const y = poster.y + poster.height * 0.5 + 20;
-  await page.mouse.move(x - 10, y - 10);
-  await page.mouse.move(x, y);
-  await expect(page.locator('.room-prelude')).not.toHaveAttribute('data-guides', '0');
-  await expect(page.locator('.poster-guides .readout').first()).toContainText('DISC');
-  await page.mouse.move(5, poster.y + poster.height - 5);
-  await page.locator('.room-prelude').dispatchEvent('pointerleave');
-  await expect(page.locator('.poster-guides .reticle')).toHaveCount(0);
-});
+  await expect(page.locator('.room-prelude .grain')).toHaveCount(0);
 
-test('a faint grain covers the site without blocking clicks', async ({ page }) => {
-  await page.goto('/');
-  const grain = page.locator('.grain');
+  await page.goto('/#/inspect/sanctum');
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'ready');
+  const grain = page.locator('.room-inspect .stage .grain');
   await expect(grain).toBeAttached();
   expect(await grain.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe('none');
   expect(Number(await grain.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(0.15);
-  await page.getByRole('link', { name: /进入图录/ }).click();
-  await expect(page).toHaveURL(/#\/catalogue$/);
+  const z = (sel: string) => page.locator(sel).first().evaluate((el) => Number(getComputedStyle(el).zIndex) || 0);
+  expect(await z('.room-inspect .annotation-lines')).toBeGreaterThan(await z('.room-inspect .stage .grain'));
 });

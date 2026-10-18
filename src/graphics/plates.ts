@@ -138,19 +138,6 @@ ${crops(16, 16, W - 16, H - 16, C.ink, 18, 1)}
 </svg>`;
 }
 
-/** Key points of the hero poster (in its 1000 × 1000 space) that the pointer guides snap to. */
-export const HERO_NODES: { x: number; y: number; name: string }[] = [
-  { x: 560, y: 500, name: 'DISC · R 230' },
-  { x: 560, y: 230, name: 'HALO' },
-  { x: 210, y: 300, name: 'NODES' },
-  { x: 845, y: 760, name: 'HEX · 06' },
-  { x: 850, y: 250, name: 'MOSAIC' },
-  { x: 175, y: 638, name: 'RECORD · 01' },
-  { x: 790, y: 118, name: 'SANCTUM' },
-  { x: 730, y: 862, name: 'TICKET' },
-  { x: 820, y: 420, name: 'STAR' },
-];
-
 export interface HeroOptions {
   /** Big outlined numeral in the corner. */
   mark?: string;

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { HERO_NODES } from '../src/graphics/plates';
 import { bracketPath, formatMetres, labelPoint, nearest, rectOf, reticlePath } from '../src/ui/guides';
 
 const nums = (d: string) => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
@@ -56,12 +55,4 @@ describe('small helpers', () => {
     expect(Math.abs(p.y)).toBe(10);
   });
 
-  it('keeps every hero key point inside the poster', () => {
-    for (const node of HERO_NODES) {
-      expect(node.x).toBeGreaterThan(0);
-      expect(node.x).toBeLessThan(1000);
-      expect(node.y).toBeGreaterThan(0);
-      expect(node.y).toBeLessThan(1000);
-    }
-  });
 });
