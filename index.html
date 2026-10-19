@@ -1,30 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Interactive web viewer for Blender models" />
-    <title>Blender Web Viewer</title>
+    <meta name="description" content="明日方舟同人三维作品集 · Fan-made interactive 3D archive" />
+    <meta name="color-scheme" content="light" />
+    <title>行迹图录 · Fan 3D Archive</title>
   </head>
   <body>
-    <main id="app">
-      <div id="viewport" aria-live="polite"></div>
-
-      <aside id="info" class="card">
-        <h1 id="project-title">Loading…</h1>
-        <p id="project-tools" class="muted"></p>
-        <p id="project-description"></p>
-        <dl id="stats"></dl>
-      </aside>
-
-      <div id="hover-label" class="pill" hidden></div>
-      <div id="status" class="pill" role="status" hidden></div>
-
-      <div id="drop-overlay" hidden>
-        <p>Drop a <strong>.glb</strong> exported from Blender</p>
-      </div>
-      <p id="drop-hint" class="muted">Drag a .glb file onto the page to preview it</p>
-    </main>
+    <header class="topbar">
+      <a class="brand" href="#/"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name"></span></a>
+      <nav class="rooms" aria-label="Rooms">
+        <a href="#/" data-room="prelude">序章<small>PRELUDE</small></a>
+        <a href="#/catalogue" data-room="catalogue">图录<small>CATALOGUE</small></a>
+        <a href="#/inspect" data-room="inspect">检视<small>INSPECT</small></a>
+        <a href="#/about" data-room="about">关于<small>ABOUT</small></a>
+      </nav>
+      <span class="fan-badge">FAN-MADE · 非官方</span>
+    </header>
+    <main id="rooms"></main>
+    <div class="wipe" aria-hidden="true"></div>
+    <div id="drop-overlay" hidden><p>松开以载入 · Drop a <strong>.glb</strong> to preview it</p></div>
+    <div id="toast" class="pill" role="status" hidden></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

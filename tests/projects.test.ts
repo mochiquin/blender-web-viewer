@@ -1,13 +1,26 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { findProject, modelUrl, PROJECTS, type Project } from '../src/projects';
+import { BACKDROPS, CATEGORIES, findProject, modelUrl, PROJECTS } from '../src/projects';
 import { isModelFile } from '../src/ui/dropzone';
+import { CUSTOM_BACKDROPS } from '../src/assets';
 
 describe('project catalogue', () => {
-  it('has unique ids', () => {
-    const ids = PROJECTS.map((p) => p.id);
-    expect(new Set(ids).size).toBe(ids.length);
+  it('has unique ids and record numbers', () => {
+    expect(new Set(PROJECTS.map((p) => p.id)).size).toBe(PROJECTS.length);
+    expect(new Set(PROJECTS.map((p) => p.number)).size).toBe(PROJECTS.length);
+  });
+
+  it('does not use the reserved "local" id', () => {
+    expect(PROJECTS.some((p) => p.id === 'local')).toBe(false);
+  });
+
+  it('gives every entry a known category, backdrop and something to show', () => {
+    for (const p of PROJECTS) {
+      expect(Object.keys(CATEGORIES)).toContain(p.category);
+      if (p.backdrop) expect([...BACKDROPS, ...CUSTOM_BACKDROPS.map((b) => b.id)]).toContain(p.backdrop);
+      expect(Boolean(p.file || p.preset), p.id).toBe(true);
+    }
   });
 
   it('only references model files that exist in public/models', () => {
@@ -16,16 +29,16 @@ describe('project catalogue', () => {
     }
   });
 
-  it('falls back to the first project for an unknown id', () => {
-    expect(findProject(PROJECTS, 'does-not-exist')).toBe(PROJECTS[0]);
-    expect(findProject(PROJECTS, null)).toBe(PROJECTS[0]);
+  it('finds projects by id', () => {
+    expect(findProject(PROJECTS, PROJECTS[0].id)).toBe(PROJECTS[0]);
+    expect(findProject(PROJECTS, 'does-not-exist')).toBeUndefined();
+    expect(findProject(PROJECTS, null)).toBeUndefined();
   });
 
   it('builds model URLs that work under a sub-path', () => {
-    const project: Project = { id: 'x', title: 'X', description: '', file: 'my model.glb' };
-    expect(modelUrl(project, './')).toBe('./models/my%20model.glb');
-    expect(modelUrl(project, '/repo')).toBe('/repo/models/my%20model.glb');
-    expect(modelUrl({ ...project, file: undefined }, './')).toBeNull();
+    expect(modelUrl({ file: 'my model.glb' }, './')).toBe('./models/my%20model.glb');
+    expect(modelUrl({ file: 'my model.glb' }, '/repo')).toBe('/repo/models/my%20model.glb');
+    expect(modelUrl({}, './')).toBeNull();
   });
 });
 

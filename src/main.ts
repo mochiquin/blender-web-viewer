@@ -1,103 +1,63 @@
 import './style.css';
-import { createDemoModel } from './demo/demoModel';
-import { findProject, modelUrl, PROJECTS, type Project } from './projects';
+import { PROJECTS } from './projects';
+import { createAbout } from './rooms/about';
+import { createCatalogue } from './rooms/catalogue';
+import { createInspect } from './rooms/inspect';
+import { createPrelude } from './rooms/prelude';
+import type { Room } from './rooms/room';
+import { parseRoute, type RoomName } from './router';
+import { SITE } from './site';
 import { enableDropZone } from './ui/dropzone';
-import { createPanel } from './ui/panel';
-import { loadModel } from './viewer/loadModel';
-import { formatCount, type ModelStats } from './viewer/modelStats';
-import { Viewer } from './viewer/Viewer';
 
-const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
+document.querySelector('.brand-name')!.textContent = SITE.title;
 
-const hoverLabel = $('#hover-label');
-const status = $('#status');
+const inspect = createInspect(PROJECTS);
+const rooms: Record<RoomName, Room> = {
+  prelude: createPrelude(),
+  catalogue: createCatalogue(PROJECTS),
+  inspect,
+  about: createAbout(),
+};
 
-const viewer = new Viewer($('#viewport'), {
-  onHover: (name) => {
-    hoverLabel.hidden = !name;
-    hoverLabel.textContent = name ?? '';
-  },
-});
-
-// Expose state on <body> so the browser smoke test can check what happened.
-function setState(state: 'loading' | 'ready' | 'error') {
-  document.body.dataset.state = state;
+const container = document.querySelector<HTMLElement>('#rooms')!;
+for (const room of Object.values(rooms)) {
+  room.element.hidden = true;
+  container.append(room.element);
 }
 
-function showStatus(message: string, isError = false) {
-  status.textContent = message;
-  status.classList.toggle('error', isError);
-  status.hidden = false;
-}
+let current: RoomName | null = null;
+const wipe = document.querySelector<HTMLElement>('.wipe')!;
 
-function renderInfo(title: string, description: string, tools: string[] = []) {
-  $('#project-title').textContent = title;
-  $('#project-description').textContent = description;
-  $('#project-tools').textContent = tools.join(' · ');
-}
-
-function renderStats(stats: ModelStats | null) {
-  const list = $('#stats');
-  list.replaceChildren();
-  if (!stats) return;
-  const [x, y, z] = stats.size.map((n) => n.toFixed(2));
-  const rows: [string, string][] = [
-    ['Triangles', formatCount(stats.triangles)],
-    ['Vertices', formatCount(stats.vertices)],
-    ['Meshes', String(stats.meshes)],
-    ['Materials', String(stats.materials)],
-    ['Textures', String(stats.textures)],
-    ['Size (m)', `${x} × ${y} × ${z}`],
-  ];
-  for (const [label, value] of rows) {
-    const dt = document.createElement('dt');
-    dt.textContent = label;
-    const dd = document.createElement('dd');
-    dd.textContent = value;
-    list.append(dt, dd);
+function navigate() {
+  const route = parseRoute(window.location.hash);
+  if (current && current !== route.room) {
+    rooms[current].leave();
+    rooms[current].element.hidden = true;
+    // A cobalt bar sweeps across between rooms, like a light wipe.
+    wipe.classList.remove('run');
+    void wipe.offsetWidth;
+    wipe.classList.add('run');
   }
-  document.body.dataset.meshes = String(stats.meshes);
+  const room = rooms[route.room];
+  room.element.hidden = false;
+  document.body.dataset.room = route.room;
+  document.querySelectorAll<HTMLElement>('.rooms a').forEach((a) => a.classList.toggle('active', a.dataset.room === route.room));
+  current = route.room;
+  room.enter(route);
+  if (route.room !== 'inspect') document.body.dataset.state = 'ready';
 }
 
-async function showModel(source: { url: string | null }, title: string, description: string, tools?: string[]) {
-  setState('loading');
-  renderInfo(title, description, tools);
-  showStatus('Loading…');
-  try {
-    if (source.url) {
-      const { scene, animations } = await loadModel(source.url, (f) => showStatus(`Loading… ${Math.round(f * 100)}%`));
-      viewer.setModel(scene, animations);
-    } else {
-      viewer.setModel(createDemoModel());
-    }
-    panel.resetForNewModel();
-    renderStats(viewer.stats);
-    status.hidden = true;
-    setState('ready');
-  } catch (error) {
-    console.error(error);
-    showStatus(`Could not load model: ${error instanceof Error ? error.message : String(error)}`, true);
-    setState('error');
-  }
-}
+window.addEventListener('hashchange', navigate);
+navigate();
 
-function showProject(project: Project) {
-  const url = new URL(window.location.href);
-  url.searchParams.set('model', project.id);
-  history.replaceState(null, '', url);
-  return showModel({ url: modelUrl(project, import.meta.env.BASE_URL) }, project.title, project.description, project.tools);
-}
-
-const initial = findProject(PROJECTS, new URLSearchParams(window.location.search).get('model'));
-const panel = createPanel(viewer, PROJECTS, initial.id, (id) => showProject(findProject(PROJECTS, id)));
-
+// Drop a .glb anywhere on the site to open it in the inspect room.
+const toast = document.querySelector<HTMLElement>('#toast')!;
 enableDropZone(
-  $('#drop-overlay'),
-  (file) => {
-    const url = URL.createObjectURL(file);
-    showModel({ url }, file.name, 'Local preview. The file stays on your computer.').finally(() => URL.revokeObjectURL(url));
+  document.querySelector<HTMLElement>('#drop-overlay')!,
+  (file) => inspect.loadFile(file),
+  (name) => {
+    toast.textContent = `${name} 不是 .glb / .gltf 文件 · not a .glb or .gltf file`;
+    toast.hidden = false;
+    setTimeout(() => (toast.hidden = true), 4000);
   },
-  (name) => showStatus(`${name} is not a .glb or .gltf file`, true),
 );
-
-showProject(initial);

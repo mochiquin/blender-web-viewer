@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="2000" height="2000">
+  <!-- TEMPLATE, never shown on the site. Put this under your layers in PS/Figma as a guide.
+       Export every layer at this exact canvas size (2000 x 2000 px, transparent), without cropping,
+       and name it "NN-name.webp": NN 00 = far back ... 99 = front. Example: 20-spire.webp, 85-hand.webp -->
+  <defs><pattern id="g" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#c9d1d0" stroke-width="1"/></pattern></defs>
+  <rect width="1000" height="1000" fill="#eef2f0"/>
+  <rect width="1000" height="1000" fill="url(#g)"/>
+  <g fill="none" stroke="#2a3fe0" stroke-width="2">
+    <circle cx="560" cy="500" r="230"/>
+    <circle cx="560" cy="500" r="300" stroke-dasharray="6 6"/>
+    <circle cx="560" cy="500" r="395" stroke-dasharray="2 8"/>
+    <ellipse cx="560" cy="230" rx="170" ry="37"/>
+    <path d="M560 0V1000M0 500H1000" stroke-width="1"/>
+  </g>
+  <rect x="16" y="16" width="968" height="968" fill="none" stroke="#d9465f" stroke-width="2" stroke-dasharray="10 6"/>
+  <g font-family="monospace" font-size="18" fill="#1f3036">
+    <text x="40" y="60">POSTER LAYER TEMPLATE · 1000 × 1000 (export at 2000 × 2000)</text>
+    <text x="40" y="88">disc centre (560, 500) · disc r 230 · rays to r 520 · inscription r 395 · halo (560, 230)</text>
+    <text x="40" y="116">red dashed line = crop marks; keep important art inside it</text>
+    <text x="40" y="944">filename: NN-name.webp / .png / .svg   NN 00 far (blurred) … 40 disc … 99 near (blurred)</text>
+    <text x="40" y="972">code sheets sit at: 08 back · 20 dots · 26 rays · 30 ring text · 40 disc · 59 halo · 66 collage · 76 birds · 89 numeral</text>
+  </g>
+</svg>
