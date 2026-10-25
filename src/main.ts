@@ -8,6 +8,7 @@ import type { Room } from './rooms/room';
 import { parseRoute, type RoomName } from './router';
 import { SITE } from './site';
 import { enableDropZone } from './ui/dropzone';
+import { enableRipples } from './ui/ripple';
 
 document.querySelector('.brand-name')!.textContent = SITE.title;
 
@@ -49,6 +50,8 @@ function navigate() {
 
 window.addEventListener('hashchange', navigate);
 navigate();
+
+enableRipples(document.querySelector<HTMLElement>('#ripples')!);
 
 // Drop a .glb anywhere on the site to open it in the inspect room.
 const toast = document.querySelector<HTMLElement>('#toast')!;

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="2000" height="2000">
+  <!-- TEMPLATE, never shown on the site. foreground · moves most, blurred like a lens.
+       Export at 2000 x 2000 px, transparent, same canvas as 00-layout.placeholder.svg (do not crop). -->
+  <defs><pattern id="g" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#c9d1d0" stroke-width="1"/></pattern></defs>
+  <rect width="1000" height="1000" fill="#eef2f0"/>
+  <rect width="1000" height="1000" fill="url(#g)"/>
+  <path d="M0 1000V720Q160 760 260 900L300 1000Z" fill="#2a3fe0" fill-opacity=".14" stroke="#2a3fe0" stroke-dasharray="12 6"/><path d="M1000 0V260Q860 240 800 120L780 0Z" fill="#2a3fe0" fill-opacity=".14" stroke="#2a3fe0" stroke-dasharray="12 6"/>
+  <g fill="none" stroke="#2a3fe0" stroke-width="2">
+    <circle cx="560" cy="500" r="230" stroke-dasharray="4 8" opacity=".6"/>
+    <path d="M560 0V1000M0 500H1000" stroke-width="1" opacity=".5"/>
+  </g>
+  <rect x="16" y="16" width="968" height="968" fill="none" stroke="#d9465f" stroke-width="2" stroke-dasharray="10 6"/>
+  <g font-family="monospace" fill="#1f3036">
+    <text x="40" y="64" font-size="30">POSTER LAYER · 92-near · foreground · moves most, blurred like a lens</text>
+    <text x="40" y="96" font-size="18">Something in front of the picture: a hand, a feather, a flower, a blade edge, cropped by the frame.</text>
+    <text x="40" y="124" font-size="18">Large, partly cut off by an edge, a little out of focus. One piece only.</text>
+    <text x="40" y="928" font-size="18">file: 92-near.webp   ·   depth ~1.4 (blur 1.2px)   ·   auto-blurred</text>
+    <text x="40" y="956" font-size="18">Avoid: sharp fine detail (it is blurred anyway); covering the title area on the left.</text>
+  </g>
+</svg>

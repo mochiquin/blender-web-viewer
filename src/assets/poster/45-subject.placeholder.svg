@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="2000" height="2000">
+  <!-- TEMPLATE, never shown on the site. the hero subject, on the disc.
+       Export at 2000 x 2000 px, transparent, same canvas as 00-layout.placeholder.svg (do not crop). -->
+  <defs><pattern id="g" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#c9d1d0" stroke-width="1"/></pattern></defs>
+  <rect width="1000" height="1000" fill="#eef2f0"/>
+  <rect width="1000" height="1000" fill="url(#g)"/>
+  <ellipse cx="560" cy="500" rx="260" ry="360" fill="#2a3fe0" fill-opacity=".14" stroke="#2a3fe0" stroke-dasharray="12 6"/><text x="560" y="500" font-size="26" text-anchor="middle" font-family="monospace" fill="#2a3fe0">SUBJECT</text>
+  <g fill="none" stroke="#2a3fe0" stroke-width="2">
+    <circle cx="560" cy="500" r="230" stroke-dasharray="4 8" opacity=".6"/>
+    <path d="M560 0V1000M0 500H1000" stroke-width="1" opacity=".5"/>
+  </g>
+  <rect x="16" y="16" width="968" height="968" fill="none" stroke="#d9465f" stroke-width="2" stroke-dasharray="10 6"/>
+  <g font-family="monospace" fill="#1f3036">
+    <text x="40" y="64" font-size="30">POSTER LAYER · 45-subject · the hero subject, on the disc</text>
+    <text x="40" y="96" font-size="18">The cut-out main piece: the white statue, the sword or the cathedral, transparent background.</text>
+    <text x="40" y="124" font-size="18">Centred on the disc (560, 500), roughly 460-620 px across; it may break out of the disc edge.</text>
+    <text x="40" y="928" font-size="18">file: 45-subject.webp   ·   depth ~0.68 (sharp)   ·   no blur</text>
+    <text x="40" y="956" font-size="18">Avoid: backgrounds baked in; a plain white cut-out reads best on the cobalt disc.</text>
+  </g>
+</svg>

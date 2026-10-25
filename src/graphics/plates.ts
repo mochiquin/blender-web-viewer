@@ -84,6 +84,22 @@ function emblem(category: Project['category'], cx: number, cy: number, r: number
 }
 
 /**
+ * A hand-drawn ring laid over a cover image. It turns with an overshoot when the card is
+ * hovered or pressed; the dots and the sparkle make the turn easy to see.
+ */
+function coverRing(id: string, cx: number, cy: number, rand: Random): string {
+  const r = 222;
+  const dots = [0.4, 2.3, 4.1].map((a) => `<circle cx="${n(cx + Math.cos(a) * r)}" cy="${n(cy + Math.sin(a) * r)}" r="5" fill="${C.cobalt}" stroke="none" />`);
+  return `<g class="plate-layer plate-ring" clip-path="url(#${id}-art)" fill="none" stroke="${C.cobalt}" aria-hidden="true">
+  <path d="${ring(cx, cy, r, rand, 1.4)}" stroke-width="1.6" />
+  <path d="${ring(cx, cy, r + 4, rand, 2)}" stroke-width=".7" opacity=".5" />
+  <path d="${dial(cx, cy, r + 12, 72, rand)}" stroke-width="1" opacity=".8" />
+  ${dots.join('')}
+  <path d="${sparkle(cx, cy - r, 14)}" fill="${C.cobalt}" stroke="none" />
+</g>`;
+}
+
+/**
  * A catalogue card, 600 × 800. Header band (number + category), art square, footer (title,
  * record line, barcode). Each zone owns its space, so the pieces never collide.
  */
@@ -120,6 +136,7 @@ export function projectPlate(project: Project, size: { width?: number; height?: 
   const art = cover
     ? `<clipPath id="${id}-art"><rect x="40" y="110" width="520" height="520" /></clipPath>
 <image href="${esc(cover)}" x="40" y="110" width="520" height="520" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id}-art)" class="plate-cover" />
+${coverRing(id, cx, cy, rand)}
 <rect x="40" y="110" width="520" height="520" fill="none" stroke="${C.ink}" stroke-width="1.2" />`
     : drawn;
 

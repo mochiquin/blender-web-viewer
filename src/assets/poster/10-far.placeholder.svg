@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="2000" height="2000">
+  <!-- TEMPLATE, never shown on the site. far backdrop · drifts least, softly blurred.
+       Export at 2000 x 2000 px, transparent, same canvas as 00-layout.placeholder.svg (do not crop). -->
+  <defs><pattern id="g" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#c9d1d0" stroke-width="1"/></pattern></defs>
+  <rect width="1000" height="1000" fill="#eef2f0"/>
+  <rect width="1000" height="1000" fill="url(#g)"/>
+  <rect x="40" y="150" width="920" height="560" fill="#2a3fe0" fill-opacity=".14" stroke="#2a3fe0" stroke-dasharray="12 6"/><text x="500" y="440" font-size="26" text-anchor="middle" font-family="monospace" fill="#2a3fe0">FAR SILHOUETTE ZONE</text>
+  <g fill="none" stroke="#2a3fe0" stroke-width="2">
+    <circle cx="560" cy="500" r="230" stroke-dasharray="4 8" opacity=".6"/>
+    <path d="M560 0V1000M0 500H1000" stroke-width="1" opacity=".5"/>
+  </g>
+  <rect x="16" y="16" width="968" height="968" fill="none" stroke="#d9465f" stroke-width="2" stroke-dasharray="10 6"/>
+  <g font-family="monospace" fill="#1f3036">
+    <text x="40" y="64" font-size="30">POSTER LAYER · 10-far · far backdrop · drifts least, softly blurred</text>
+    <text x="40" y="96" font-size="18">Faint ruins / spire / arches silhouette behind the disc, light blue-grey, low contrast.</text>
+    <text x="40" y="124" font-size="18">Pale, 20-40% opacity, soft edges. It must not compete with the disc.</text>
+    <text x="40" y="928" font-size="18">file: 10-ruins.webp   ·   depth ~0.15 (blur 2.5px)   ·   auto-blurred</text>
+    <text x="40" y="956" font-size="18">Avoid: bright colours, text, anything centred on the disc.</text>
+  </g>
+</svg>

@@ -255,6 +255,102 @@ a {
   background: #b3261e;
 }
 
+/* Click marks: a ring, a crosshair, a stamped letter and the coordinates, fading out. */
+#ripples {
+  position: fixed;
+  inset: 0;
+  z-index: 14;
+  pointer-events: none;
+}
+
+.ripple {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.ripple i:first-child {
+  position: absolute;
+  left: -34px;
+  top: -34px;
+  width: 68px;
+  height: 68px;
+  border: 1px solid var(--cobalt);
+  border-radius: 50%;
+  animation: ripple-ring 1.3s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.ripple i:nth-child(2) {
+  position: absolute;
+  left: -12px;
+  top: -12px;
+  width: 24px;
+  height: 24px;
+  background:
+    linear-gradient(var(--ink), var(--ink)) 50% 0 / 1px 100% no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 0 50% / 100% 1px no-repeat;
+  animation: ripple-fade 1.2s forwards;
+}
+
+.ripple b {
+  position: absolute;
+  left: 18px;
+  top: -58px;
+  font: 400 54px/1 var(--serif);
+  color: var(--ink);
+  animation: ripple-letter 1.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.ripple span {
+  position: absolute;
+  left: 18px;
+  top: 6px;
+  font: 8px var(--mono);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  color: var(--ink);
+  animation: ripple-fade 1.4s forwards;
+}
+
+@keyframes ripple-ring {
+  from {
+    scale: 0.2;
+    opacity: 1;
+  }
+  to {
+    scale: 2.2;
+    opacity: 0;
+  }
+}
+
+@keyframes ripple-letter {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+    scale: 1.8;
+  }
+  25% {
+    opacity: 0.85;
+    filter: blur(0.6px);
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    filter: blur(4px);
+    translate: 20px 0;
+  }
+}
+
+@keyframes ripple-fade {
+  0%,
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 #toast {
   position: fixed;
   top: calc(var(--topbar) + 16px);
@@ -429,6 +525,10 @@ a {
   .wipe.run {
     animation: none;
   }
+
+  .plate .plate-ring {
+    transition: none;
+  }
 }
 
 /* ── Catalogue ───────────────────────────────────────────────────────── */
@@ -482,6 +582,20 @@ a {
 
 .plate-card:hover .plate-near {
   transform: scale(1.08);
+}
+
+/* The ring over a cover turns with an overshoot on hover and a little further when pressed. */
+.plate .plate-ring {
+  transition: transform 0.9s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.plate-card:hover .plate-ring {
+  transform: rotate(120deg);
+}
+
+.plate-card:active .plate-ring {
+  transform: rotate(170deg);
+  transition-duration: 0.3s;
 }
 
 .plate-local {

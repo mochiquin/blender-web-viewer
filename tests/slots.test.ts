@@ -68,3 +68,10 @@ describe('templates', () => {
     expect(readFileSync(asset('covers/sanctum.placeholder.svg'), 'utf8')).toContain('1040');
   });
 });
+
+describe('cover ring', () => {
+  it('lays a turning ring over a cover but not over the drawn art', () => {
+    expect(projectPlate(PROJECTS[0], {}, '/cover.webp')).toContain('plate-ring');
+    expect(projectPlate(PROJECTS[0])).not.toContain('plate-ring');
+  });
+});
