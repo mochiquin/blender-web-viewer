@@ -41,6 +41,11 @@ opened in the browser and never uploaded.
 - **Print grain**: a faint drifting grain over the 3D view (paused for reduced motion)
 - **Generated graphics**: plates and the hero are drawn from a seeded "hand-drawn" vocabulary
   (wobbling rings that overshoot, bowed rules, tapered brush strokes), so they look the same every load
+- **Part inspection**: click a part (or run **逐项检查**) to ghost the rest, fly to it and get a report: meshes,
+  triangles, size, geometry validity, left-right symmetry, support and explode travel. `←` `→` step through
+  parts, `Esc` leaves. A **section** slider cuts the model open along X, and **逐层展开** opens it layer by layer
+- **Light path (✦ 光路)**: a small game. Join the hand-drawn markers in the order the light travels and a beam
+  runs through the model. Set `lightPath` on an entry in `src/projects.ts` to enable it (part names, in order)
 - **Backdrops**: paper, blueprint grid, halftone sun and dusk, set per entry or switched live
 - **Shading modes** like Blender's viewport: materials, clay, wireframe, normals, UV checker
 - **Exploded view** that stays correct under scaled parents (common in Blender exports)
@@ -101,6 +106,11 @@ Full rules (in English and Chinese) are in [`src/assets/README.md`](src/assets/R
 | `src/assets/backdrops/` | `cloister.webp`, `night-dark.webp`, `loop.webm` | 2560 × 1440 | Extra backdrops in the inspect panel; `-dark` switches UI to light ink |
 
 To make an entry open on a custom backdrop, set `backdrop: 'cloister'` (the file name) in `src/projects.ts`.
+Every entry opens on `DEFAULT_BACKDROP` (`src/projects.ts`) unless it sets its own `backdrop`.
+
+Real art files in these folders are git-ignored and stay local (only the `*.placeholder.*` templates are
+tracked). Keep originals in `art-source/`, also ignored. A site built from the repository alone, such as
+the GitHub Pages deploy, therefore shows the code-drawn art instead.
 
 ## Assets
 
@@ -126,6 +136,8 @@ src/
     annotations.ts        callouts, part frames, measured chain and reticle over the 3D view
     guides.ts             bracket frames, nearest-node search, reticle geometry
     labelLayout.ts        callout placement (no overlaps, clear of panels)
+    report.ts             the per-part report card
+    lightOverlay.ts       light-path markers and chain (puzzle rules in lightPuzzle.ts)
     panel.ts              lil-gui inspect panel
     dropzone.ts           drag and drop
   viewer/
@@ -133,7 +145,9 @@ src/
     loadModel.ts          GLTFLoader with Draco + Meshopt
     framing.ts            fit the camera to a model
     explode.ts            exploded-view offsets
-    viewModes.ts          clay / wireframe / normals / UV checker
+    viewModes.ts          clay / wireframe / normals / UV checker, ghosting of unfocused parts
+    partReport.ts         per-part structural report, part list
+    beam.ts               the light-path beam
     modelStats.ts         triangles, textures, budget warnings
 tests/                    unit tests (Vitest)
 e2e/                      browser tests (Playwright, real WebGL in Chromium)
@@ -142,8 +156,8 @@ e2e/                      browser tests (Playwright, real WebGL in Chromium)
 ## Testing
 
 ```bash
-npm test           # 95 unit tests: graphics, plates, art slots, guides, layout, router, scenes, explode, stats
-npm run test:e2e   # 13 browser tests: every room, every preset, panel controls, guides, grain,
+npm test           # 113 unit tests: graphics, plates, art slots, guides, layout, router, scenes, explode, part reports, light path, stats
+npm run test:e2e   # 16 browser tests: every room, every preset, panel controls, part inspection, guides, grain,
                    # drag-and-drop, file chooser, rejected files, phone layout
 ```
 

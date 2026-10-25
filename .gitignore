@@ -7,3 +7,11 @@ playwright-report/
 public/draco/
 # Third-party (e.g. official Hypergryph) assets: keep local, never commit
 public/assets/third-party/
+
+# Art assets stay local: real images/videos in the art slots and the source files are never committed.
+# The *.placeholder.* templates and the README stay tracked.
+src/assets/poster/*
+src/assets/covers/*
+src/assets/backdrops/*
+!src/assets/*/*.placeholder.*
+art-source/

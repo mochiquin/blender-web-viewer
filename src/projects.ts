@@ -32,6 +32,8 @@ export interface Project {
   /** Built-in placeholder scene, used when there is no file yet. */
   preset?: Category;
   annotations?: Annotation[];
+  /** Parts a beam of light passes, in order: the light-path game asks the visitor to join them. */
+  lightPath?: Annotation[];
   /** Backdrop shown behind the model in the inspect room. */
   backdrop?: BackdropId;
 }
@@ -40,6 +42,9 @@ export const BACKDROPS = ['paper', 'blueprint', 'halftone', 'dusk'] as const;
 export type BuiltInBackdrop = (typeof BACKDROPS)[number];
 /** A built-in backdrop, or the name of a file in src/assets/backdrops/ (without extension). */
 export type BackdropId = BuiltInBackdrop | (string & {});
+
+/** Backdrop used by every entry (and by dropped local models) unless it sets its own. */
+export const DEFAULT_BACKDROP: BackdropId = 'orbital-blueprint';
 
 export const PROJECTS: Project[] = [
   {
@@ -51,12 +56,18 @@ export const PROJECTS: Project[] = [
     description: 'Placeholder nave with ribbed arches and a rose window. Replace with your Blender scene.',
     tools: ['Three.js'],
     preset: 'cathedral',
-    backdrop: 'blueprint',
+    backdrop: DEFAULT_BACKDROP,
     annotations: [
       { part: 'Rose window', label: '玫瑰花窗', note: 'ROSE WINDOW' },
       { part: 'Arcade', label: '尖拱连拱', note: 'POINTED ARCADE' },
       { part: 'Piers', label: '束柱', note: 'CLUSTERED PIERS' },
       { part: 'Steps', label: '入口台阶', note: 'THE GATE' },
+    ],
+    lightPath: [
+      { part: 'Steps', label: '入口台阶', note: 'THE GATE' },
+      { part: 'Piers', label: '束柱', note: 'PIERS' },
+      { part: 'Vault ribs', label: '肋拱', note: 'VAULT RIBS' },
+      { part: 'Rose window', label: '玫瑰花窗', note: 'ROSE WINDOW' },
     ],
   },
   {
@@ -68,11 +79,16 @@ export const PROJECTS: Project[] = [
     description: 'Placeholder statue on a plinth with a halo. Replace with a ZBrush sculpt (retopologised for web).',
     tools: ['Three.js'],
     preset: 'sculpture',
-    backdrop: 'halftone',
+    backdrop: DEFAULT_BACKDROP,
     annotations: [
       { part: 'Halo', label: '光环', note: 'HALO' },
       { part: 'Figure', label: '雕像', note: 'FIGURE' },
       { part: 'Plinth', label: '基座', note: 'PLINTH' },
+    ],
+    lightPath: [
+      { part: 'Plinth', label: '基座', note: 'PLINTH' },
+      { part: 'Figure', label: '雕像', note: 'FIGURE' },
+      { part: 'Halo', label: '光环', note: 'HALO' },
     ],
   },
   {
@@ -84,12 +100,18 @@ export const PROJECTS: Project[] = [
     description: 'Placeholder sword on a display stand. Replace with a weapon model and its texture breakdown.',
     tools: ['Three.js'],
     preset: 'weapon',
-    backdrop: 'dusk',
+    backdrop: DEFAULT_BACKDROP,
     annotations: [
       { part: 'Blade', label: '刃', note: 'BLADE' },
       { part: 'Guard', label: '护手', note: 'GUARD' },
       { part: 'Grip', label: '握柄', note: 'GRIP' },
       { part: 'Stand', label: '展架', note: 'STAND' },
+    ],
+    lightPath: [
+      { part: 'Stand', label: '展架', note: 'STAND' },
+      { part: 'Grip', label: '握柄', note: 'GRIP' },
+      { part: 'Guard', label: '护手', note: 'GUARD' },
+      { part: 'Blade', label: '刃', note: 'BLADE' },
     ],
   },
 ];

@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { Beam } from './beam';
 import { applyExplode, buildExplode, type ExplodePart } from './explode';
 import { frameObject } from './framing';
 import { collectStats, type ModelStats } from './modelStats';
+import { listParts, partRootOf, reportPart, type PartReport } from './partReport';
 import { MaterialSwitcher, type ViewMode } from './viewModes';
 
 export interface ViewerEvents {
@@ -29,6 +31,13 @@ export class Viewer {
   private switcher: MaterialSwitcher | null = null;
   private explodeParts: ExplodePart[] = [];
   private explodeAmount = 0;
+  private explodeStagger = 0;
+  private partRoot: THREE.Object3D | null = null;
+  private focused: THREE.Object3D | null = null;
+  private fly: { position: THREE.Vector3; target: THREE.Vector3; time: number } | null = null;
+  private clip = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
+  private modelBox = new THREE.Box3();
+  private beam: Beam | null = null;
   private mixer: THREE.AnimationMixer | null = null;
   private clock = new THREE.Clock();
   private ground: THREE.Mesh;
@@ -84,7 +93,14 @@ export class Viewer {
     const canvas = this.renderer.domElement;
     canvas.addEventListener('pointermove', (e) => this.updatePointer(e));
     canvas.addEventListener('pointerleave', () => this.setHovered(null));
-    canvas.addEventListener('click', () => this.select(this.hovered));
+    // A drag that ends over a part is an orbit, not a pick.
+    let down: { x: number; y: number } | null = null;
+    canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
+    canvas.addEventListener('click', (e) => {
+      const moved = down ? Math.hypot(e.clientX - down.x, e.clientY - down.y) : 0;
+      down = null;
+      if (moved <= 5) this.select(this.hovered);
+    });
 
     this.renderer.setAnimationLoop(() => this.frame());
   }
@@ -97,8 +113,11 @@ export class Viewer {
 
     this.switcher = new MaterialSwitcher(object);
     this.explodeParts = buildExplode(object);
-    applyExplode(this.explodeParts, this.explodeAmount);
+    applyExplode(this.explodeParts, this.explodeAmount, this.explodeStagger);
     this.stats = collectStats(object);
+    this.partRoot = partRootOf(object);
+    this.modelBox.setFromObject(object);
+    this.setSection(0);
 
     if (animations.length) {
       this.mixer = new THREE.AnimationMixer(object);
@@ -113,21 +132,98 @@ export class Viewer {
     this.switcher?.setMode(mode);
   }
 
-  setExplode(amount: number): void {
+  /** `stagger` > 0 opens the model layer by layer instead of all parts at once. */
+  setExplode(amount: number, stagger = 0): void {
     this.explodeAmount = amount;
-    applyExplode(this.explodeParts, amount);
+    this.explodeStagger = stagger;
+    applyExplode(this.explodeParts, amount, stagger);
     this.selectionBox?.update();
   }
 
+  /** The parts that can be inspected one by one, in model order. */
+  parts(): THREE.Object3D[] {
+    return this.model ? listParts(this.model) : [];
+  }
+
+  /** Structural check of one part, measured with the model assembled. */
+  reportFor(part: THREE.Object3D): PartReport | null {
+    if (!this.model) return null;
+    applyExplode(this.explodeParts, 0);
+    const travel = new Map(this.explodeParts.map((p) => [p.object, p.offset.length() * (p.object.parent?.matrixWorld.getMaxScaleOnAxis() ?? 1)]));
+    const report = reportPart(part, this.model, (mesh) => travel.get(mesh as THREE.Mesh) ?? 0);
+    applyExplode(this.explodeParts, this.explodeAmount, this.explodeStagger);
+    return report;
+  }
+
+  /** The part being inspected, if any. */
+  get focus(): THREE.Object3D | null {
+    return this.focused;
+  }
+
   /**
-   * The named part an object belongs to: the top-level child of the model it sits under.
+   * Inspect one part: ghost the rest and fly the camera to it. Pass null to leave inspection
+   * and show the whole model again.
+   */
+  focusPart(part: THREE.Object3D | null): void {
+    this.focused = part;
+    this.clearSelectionBox();
+    if (!part) {
+      this.switcher?.setFocus(null);
+      this.fly = null;
+      return;
+    }
+    const meshes: THREE.Mesh[] = [];
+    part.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) meshes.push(child as THREE.Mesh);
+    });
+    this.switcher?.setFocus(meshes);
+
+    const box = new THREE.Box3().setFromObject(part);
+    if (box.isEmpty()) return;
+    const centre = box.getCenter(new THREE.Vector3());
+    // Stand far enough back that the part's bounding sphere fits the view, from the usual three-quarter side.
+    const radius = box.getSize(new THREE.Vector3()).length() / 2;
+    const halfFov = THREE.MathUtils.degToRad(Math.min(this.camera.fov, this.camera.fov * this.camera.aspect) / 2);
+    const distance = (radius / Math.sin(halfFov)) * 1.15;
+    const direction = new THREE.Vector3(0.85, 0.5, 1).normalize();
+    this.fly = { position: centre.clone().addScaledVector(direction, distance), target: centre, time: 0 };
+  }
+
+  /** Show a beam of light through these world-space points (growing from the first), or remove it with null. */
+  setBeam(points: THREE.Vector3[] | null): void {
+    if (this.beam) {
+      this.scene.remove(this.beam.group);
+      this.beam.dispose();
+      this.beam = null;
+    }
+    if (!points || points.length < 2 || this.modelBox.isEmpty()) return;
+    this.beam = new Beam(points, this.modelBox.getSize(new THREE.Vector3()).length());
+    this.scene.add(this.beam.group);
+  }
+
+  /** Cut the model open along X: 0 shows all of it, 1 cuts through to the far side. */
+  setSection(amount: number): void {
+    const t = THREE.MathUtils.clamp(amount, 0, 1);
+    if (t <= 0 || this.modelBox.isEmpty()) {
+      this.renderer.clippingPlanes = [];
+      return;
+    }
+    // The plane keeps everything with x <= constant; start past the model and sweep to its far edge.
+    const pad = this.modelBox.getSize(new THREE.Vector3()).length() * 0.05;
+    this.clip.constant = THREE.MathUtils.lerp(this.modelBox.max.x + pad, this.modelBox.min.x, t);
+    this.renderer.clippingPlanes = [this.clip];
+  }
+
+  /**
+   * The named part an object belongs to: the child of the model's part root it sits under.
    * In a Blender export that is the Blender object, so hovering any of its meshes names it.
    */
   partOf(object: THREE.Object3D | null): THREE.Object3D | null {
-    if (!object || !this.model) return null;
+    const root = this.partRoot;
+    if (!object || !this.model || !root) return null;
     let current: THREE.Object3D = object;
-    while (current.parent && current.parent !== this.model) current = current.parent;
-    return current.parent === this.model ? current : object;
+    while (current.parent && current.parent !== root) current = current.parent;
+    return current.parent === root ? current : object;
   }
 
   /** Find a part by name anywhere in the model (exact match). */
@@ -211,6 +307,10 @@ export class Viewer {
     if (!this.model) return;
     this.select(null);
     this.setHovered(null);
+    this.setBeam(null);
+    this.focused = null;
+    this.fly = null;
+    this.partRoot = null;
     this.switcher?.dispose();
     this.mixer?.stopAllAction();
     this.scene.remove(this.model);
@@ -246,13 +346,16 @@ export class Viewer {
     this.events.onHover?.(object ? object.name || '(unnamed mesh)' : null);
   }
 
+  private clearSelectionBox(): void {
+    if (!this.selectionBox) return;
+    this.scene.remove(this.selectionBox);
+    this.selectionBox.dispose();
+    this.selectionBox = null;
+  }
+
   private select(object: THREE.Object3D | null): void {
-    if (this.selectionBox) {
-      this.scene.remove(this.selectionBox);
-      this.selectionBox.dispose();
-      this.selectionBox = null;
-    }
-    if (object) {
+    this.clearSelectionBox();
+    if (object && !this.focused) {
       this.selectionBox = new THREE.BoxHelper(object, 0xff7a1a); // Blender's selection orange
       this.scene.add(this.selectionBox);
     }
@@ -264,6 +367,14 @@ export class Viewer {
     // Skip work while the tab is hidden.
     if (document.hidden) return;
     this.mixer?.update(delta);
+    this.beam?.update(delta);
+    if (this.fly) {
+      const k = 1 - Math.exp(-delta * 3.2);
+      this.camera.position.lerp(this.fly.position, k);
+      this.controls.target.lerp(this.fly.target, k);
+      this.fly.time += delta;
+      if (this.fly.time > 1.6) this.fly = null;
+    }
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
     this.events.onFrame?.();

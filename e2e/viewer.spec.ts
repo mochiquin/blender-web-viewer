@@ -165,3 +165,85 @@ test('the faint grain sits on the 3D view only, under the overlays', async ({ pa
   const z = (sel: string) => page.locator(sel).first().evaluate((el) => Number(getComputedStyle(el).zIndex) || 0);
   expect(await z('.room-inspect .annotation-lines')).toBeGreaterThan(await z('.room-inspect .stage .grain'));
 });
+
+test('inspects part by part: tour, arrow keys, close, section and layered explode', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/#/inspect/sanctum');
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'ready');
+  const report = page.locator('.report');
+  await expect(report).toBeHidden();
+
+  await page.locator('.lil-gui .controller', { hasText: '逐项检查' }).locator('button').click();
+  await expect(report).toBeVisible();
+  await expect(report.locator('.report-code')).toHaveText('P-01');
+  await expect(report.locator('.report-checks li')).toHaveCount(8);
+  await expect(page.locator('.room-inspect .info')).toBeHidden();
+
+  await page.keyboard.press('ArrowRight');
+  await expect(report.locator('.report-code')).toHaveText('P-02');
+  await expect(report.locator('.report-progress')).toContainText('已检查 2');
+  await page.keyboard.press('ArrowLeft');
+  await expect(report.locator('.report-code')).toHaveText('P-01');
+  expect(await canvasHasContent(page)).toBe(true);
+
+  await page.keyboard.press('Escape');
+  await expect(report).toBeHidden();
+  await expect(page.locator('.room-inspect .info')).toBeVisible();
+
+  const section = page.locator('.lil-gui .controller', { hasText: 'Section' }).locator('input[type=text], input[type=number]').first();
+  await section.fill('0.5');
+  await section.press('Enter');
+  expect(await canvasHasContent(page)).toBe(true);
+
+  await page.locator('.lil-gui .controller', { hasText: '逐层展开' }).locator('button').click();
+  await expect(page.locator('.lil-gui .controller', { hasText: 'Explode' }).locator('input[type=text], input[type=number]').first()).not.toHaveValue('0');
+  expect(errors).toEqual([]);
+});
+
+test('clicking a part opens its report, and orbiting does not', async ({ page }) => {
+  await page.goto('/#/inspect/figure');
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'ready');
+  const canvas = page.locator('.room-inspect canvas');
+  const box = (await canvas.boundingBox())!;
+  const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+  // A drag across the model orbits the camera and must not pick a part.
+  await page.mouse.move(centre.x, centre.y);
+  await page.mouse.down();
+  await page.mouse.move(centre.x + 60, centre.y + 10, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.locator('.report')).toBeHidden();
+
+  // Hovering shows the part name; a plain click on it inspects it.
+  await page.mouse.move(centre.x, centre.y);
+  await expect(page.locator('.hover-label')).toBeVisible();
+  await page.mouse.click(centre.x, centre.y);
+  await expect(page.locator('.report')).toBeVisible();
+  await page.locator('.report-close').click();
+  await expect(page.locator('.report')).toBeHidden();
+});
+
+test('light path: wrong order resets, right order lights the beam', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/#/inspect/sanctum');
+  await expect(page.locator('body')).toHaveAttribute('data-state', 'ready');
+  await page.locator('.lil-gui .controller', { hasText: '光路' }).locator('button').click();
+  const marks = page.locator('.lp-mark');
+  await expect(marks).toHaveCount(4);
+  await expect(page.locator('.callout:visible')).toHaveCount(0);
+
+  // Out of order: nothing stays lit.
+  await marks.nth(2).click();
+  await expect(page.locator('.lp-mark.lit')).toHaveCount(0);
+  await expect(page.locator('.room-inspect .stage')).toHaveClass(/miss/);
+
+  for (let i = 0; i < 4; i++) await marks.nth(i).click();
+  await expect(page.locator('.lp-mark.lit')).toHaveCount(4);
+  await expect(page.locator('.room-inspect .stage')).toHaveClass(/solved/);
+  await expect(page.locator('.status')).toContainText('光路贯通');
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.room-inspect .stage')).not.toHaveClass(/light-mode/);
+  await expect(page.locator('.callout:visible')).toHaveCount(4);
+  expect(errors).toEqual([]);
+});

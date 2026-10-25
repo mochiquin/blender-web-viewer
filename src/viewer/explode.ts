@@ -7,6 +7,8 @@ export interface ExplodePart {
   home: THREE.Vector3;
   /** Local-space offset applied at full explosion. */
   offset: THREE.Vector3;
+  /** 0..1: how late this part leaves during a staggered opening (the outermost parts go last). */
+  delay: number;
 }
 
 /**
@@ -27,8 +29,10 @@ export function buildExplode(root: THREE.Object3D, spread = 0.8): ExplodePart[] 
     if ((child as THREE.Mesh).isMesh) meshes.push(child as THREE.Mesh);
   });
 
+  const reach = size / 2 || 1;
   return meshes.map((mesh) => {
     const partCenter = new THREE.Box3().setFromObject(mesh).getCenter(new THREE.Vector3());
+    const delay = THREE.MathUtils.clamp(partCenter.distanceTo(center) / reach, 0, 1);
     const worldDirection = partCenter.sub(center).multiplyScalar(spread);
     // A part at (or very near) the centre would barely move, so lift it instead.
     const minimum = size * 0.15 * spread;
@@ -44,16 +48,25 @@ export function buildExplode(root: THREE.Object3D, spread = 0.8): ExplodePart[] 
     const localOrigin = new THREE.Vector3().applyMatrix4(parentInverse);
     const localOffset = worldDirection.applyMatrix4(parentInverse).sub(localOrigin);
 
-    return { object: mesh, home: mesh.position.clone(), offset: localOffset };
+    return { object: mesh, home: mesh.position.clone(), offset: localOffset, delay };
   });
 }
 
-/** Move parts to `amount` of the way between assembled (0) and fully exploded (1). */
-export function applyExplode(parts: ExplodePart[], amount: number): void {
+const smooth = (x: number) => {
+  const t = THREE.MathUtils.clamp(x, 0, 1);
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * Move parts to `amount` of the way between assembled (0) and fully exploded (1).
+ * With `stagger` above 0, each part leaves after the ones nearer the centre, so the model opens
+ * layer by layer; every part still reaches 0 at amount 0 and 1 at amount 1.
+ */
+export function applyExplode(parts: ExplodePart[], amount: number, stagger = 0): void {
   const t = THREE.MathUtils.clamp(amount, 0, 1);
-  // Ease so parts start moving gently and settle at the end.
-  const eased = t * t * (3 - 2 * t);
   for (const part of parts) {
-    part.object.position.copy(part.home).addScaledVector(part.offset, eased);
+    // Ease so parts start moving gently and settle at the end.
+    const k = smooth(t * (1 + part.delay * stagger) - part.delay * stagger);
+    part.object.position.copy(part.home).addScaledVector(part.offset, k);
   }
 }

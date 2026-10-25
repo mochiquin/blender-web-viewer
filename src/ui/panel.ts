@@ -14,6 +14,12 @@ export const BACKDROP_LABELS: Record<BuiltInBackdrop, string> = {
 export interface PanelHandlers {
   onBackdrop: (id: BackdropId) => void;
   onCallouts: (visible: boolean) => void;
+  /** Start or stop the automatic part-by-part inspection. */
+  onTour: () => void;
+  /** Leave the inspection of a single part. */
+  onExit: () => void;
+  /** Start or stop the light-path game. */
+  onLight: () => void;
 }
 
 /** The control panel in the inspect room, like a small Blender N-panel for the viewport. */
@@ -28,6 +34,12 @@ export function createPanel(container: HTMLElement, viewer: Viewer, handlers: Pa
     keyLight: viewer.keyLight.intensity,
     autoRotate: false,
     grid: false,
+    section: 0,
+  };
+  let explodeTimer = 0;
+  const stopExplodePlayback = () => {
+    cancelAnimationFrame(explodeTimer);
+    explodeTimer = 0;
   };
 
   const gui = new GUI({ title: '检视 · INSPECT', container });
@@ -36,13 +48,39 @@ export function createPanel(container: HTMLElement, viewer: Viewer, handlers: Pa
 
   const modeOptions = Object.fromEntries(VIEW_MODES.map((m) => [VIEW_MODE_LABELS[m], m]));
   gui.add(state, 'viewMode', modeOptions).name('Shading').onChange((m: ViewMode) => viewer.setViewMode(m));
-  gui.add(state, 'explode', 0, 1, 0.01).name('Explode').onChange((v: number) => viewer.setExplode(v));
+  const explodeController = gui.add(state, 'explode', 0, 1, 0.01).name('Explode').onChange((v: number) => {
+    stopExplodePlayback();
+    viewer.setExplode(v);
+  });
   gui.add(state, 'callouts').name('Callouts').onChange(handlers.onCallouts);
   const backdropOptions = Object.fromEntries([
     ...BACKDROPS.map((b) => [BACKDROP_LABELS[b], b]),
     ...CUSTOM_BACKDROPS.map((b) => [`自定义 ${b.id}`, b.id]),
   ]);
   gui.add(state, 'backdrop', backdropOptions).name('Backdrop').onChange(handlers.onBackdrop);
+
+  const inspect = gui.addFolder('Inspect 检查');
+  inspect.add(state, 'section', 0, 1, 0.01).name('Section 剖切').onChange((v: number) => viewer.setSection(v));
+  /** Open the model layer by layer, innermost parts first. */
+  const playExplode = () => {
+    stopExplodePlayback();
+    state.explode = 0;
+    viewer.setExplode(0, 1);
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min((now - start) / 3200, 1);
+      state.explode = t;
+      viewer.setExplode(t, 1);
+      explodeController.updateDisplay();
+      explodeTimer = t < 1 ? requestAnimationFrame(step) : 0;
+    };
+    explodeTimer = requestAnimationFrame(step);
+  };
+  inspect.add({ play: playExplode }, 'play').name('逐层展开 ▶');
+  const tour = inspect.add({ tour: handlers.onTour }, 'tour').name('逐项检查 ▶');
+  inspect.add({ exit: handlers.onExit }, 'exit').name('结束检查 ✕');
+  const light = inspect.add({ light: handlers.onLight }, 'light').name('✦ 光路');
+  light.disable();
 
   const lighting = gui.addFolder('Lighting').close();
   lighting.add(state, 'exposure', 0.2, 3, 0.01).name('Exposure').onChange((v: number) => {
@@ -66,11 +104,25 @@ export function createPanel(container: HTMLElement, viewer: Viewer, handlers: Pa
   function resetForModel(backdrop: BackdropId) {
     state.viewMode = 'shaded';
     state.explode = 0;
+    state.section = 0;
     state.backdrop = backdrop;
+    stopExplodePlayback();
     viewer.setViewMode('shaded');
     viewer.setExplode(0);
+    viewer.setSection(0);
     gui.controllersRecursive().forEach((c) => c.updateDisplay());
   }
 
-  return { gui, state, resetForModel };
+  /** Reflect whether the automatic inspection is running on its button. */
+  function setTouring(running: boolean) {
+    tour.name(running ? '停止检查 ■' : '逐项检查 ▶');
+  }
+
+  /** The light-path button works only for models that define a path; it shows whether the game is on. */
+  function setLight(available: boolean, on: boolean) {
+    light.name(on ? '✦ 光路 · 进行中' : '✦ 光路');
+    light.enable(available);
+  }
+
+  return { gui, state, resetForModel, setTouring, setLight };
 }

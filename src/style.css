@@ -1049,3 +1049,301 @@ a {
     display: none;
   }
 }
+
+/* ── Part inspection report ───────────────────────────────────────────
+   Takes the info card's place while a part is inspected. */
+.report-host {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 6;
+  width: min(300px, calc(100% - 32px));
+}
+
+.room-inspect:has(.report:not([hidden])) .info {
+  visibility: hidden;
+}
+
+.report {
+  padding: 0 0 14px;
+}
+
+.report[hidden] {
+  display: none;
+}
+
+.report.swap > * {
+  animation: report-in 0.5s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+@keyframes report-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+.report-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--ink);
+  color: var(--paper-2);
+}
+
+.report-code {
+  font: 600 16px var(--sans);
+  letter-spacing: 0.04em;
+}
+
+.report-name {
+  font: 600 14px var(--sans);
+  letter-spacing: 0.06em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report button {
+  font: 12px var(--mono);
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.report-close {
+  margin-left: auto;
+}
+
+.report-note {
+  margin: 10px 16px 0;
+  font: 9px var(--mono);
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.report-checks {
+  margin: 10px 16px 12px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.report-checks li {
+  display: grid;
+  grid-template-columns: 16px 112px 1fr;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+}
+
+.report-checks i {
+  font: normal 11px var(--mono);
+}
+
+.report-checks .ok i {
+  color: var(--cobalt);
+}
+
+.report-checks .warn i {
+  color: #c4303f;
+}
+
+.report-checks .plain i {
+  color: var(--muted);
+}
+
+.report-checks b {
+  font: 400 11px var(--mono);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.report-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+}
+
+.report-progress {
+  margin-right: auto;
+  font: 9px var(--mono);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.report-foot button {
+  width: 34px;
+  height: 26px;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+.report-foot button:hover {
+  background: var(--ink);
+  color: var(--paper-2);
+}
+
+@media (max-width: 720px) {
+  .report-host {
+    top: auto;
+    bottom: 120px;
+  }
+
+  .report-checks li {
+    grid-template-columns: 16px 96px 1fr;
+    padding: 4px 0;
+  }
+
+  .report-note {
+    display: none;
+  }
+}
+
+/* ── Light-path game ──────────────────────────────────────────────────
+   Hand-drawn markers over the 3D view, joined in the order the light travels. */
+.light-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.lp-mark {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.lp-hit {
+  fill: transparent;
+}
+
+.lp-mark path {
+  fill: none;
+  stroke: var(--cobalt);
+  stroke-width: 1.6;
+}
+
+.lp-mark .echo {
+  opacity: 0.3;
+}
+
+.lp-mark .lp-cross {
+  stroke-width: 1;
+  opacity: 0.7;
+}
+
+.lp-mark text {
+  font: 600 13px var(--sans);
+  letter-spacing: 0.1em;
+  fill: var(--ink);
+}
+
+.lp-mark text.en {
+  font: 9px var(--mono);
+  letter-spacing: 0.1em;
+  fill: var(--muted);
+}
+
+.lp-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: scale 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.lp-mark:hover .lp-ring:not(.echo) {
+  scale: 1.25;
+  stroke-width: 2.6;
+}
+
+.lp-mark.lit .lp-ring {
+  fill: rgba(58, 91, 194, 0.2);
+  stroke-width: 2.4;
+}
+
+.lp-chain {
+  fill: none;
+  stroke: var(--cobalt);
+  stroke-width: 2;
+}
+
+.lp-chain.brush {
+  fill: #3a5bc2;
+  stroke: none;
+  filter: drop-shadow(0 0 8px #6f8dff);
+}
+
+.lp-band {
+  fill: none;
+  stroke: var(--cobalt);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 6;
+  opacity: 0.7;
+}
+
+.lp-burst {
+  opacity: 0;
+  fill: #3a5bc2;
+}
+
+.lp-burst .lp-burst-ring {
+  fill: none;
+  stroke: #3a5bc2;
+  stroke-width: 2;
+}
+
+.lp-burst .lp-spark {
+  fill: #3a5bc2;
+}
+
+.solved .lp-burst {
+  animation: lp-burst 2.2s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+@keyframes lp-burst {
+  0% {
+    opacity: 0;
+    scale: 0.2;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.35;
+    scale: 1;
+  }
+}
+
+.miss .lp-layer {
+  animation: lp-miss 0.4s steps(2);
+}
+
+@keyframes lp-miss {
+  25% {
+    translate: -6px 0;
+  }
+  50% {
+    translate: 5px 0;
+  }
+  75% {
+    translate: -3px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .solved .lp-burst,
+  .miss .lp-layer {
+    animation: none;
+  }
+
+  .solved .lp-burst {
+    opacity: 0.35;
+  }
+}

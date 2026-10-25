@@ -1,11 +1,14 @@
+import type { Object3D } from 'three';
 import { COVERS, CUSTOM_BACKDROPS } from '../assets';
 import { projectPlate } from '../graphics/plates';
-import { CATEGORIES, findProject, modelUrl, type BackdropId, type Project } from '../projects';
+import { CATEGORIES, DEFAULT_BACKDROP, findProject, modelUrl, type BackdropId, type Project } from '../projects';
 import { routeHref, type Route } from '../router';
 import { PRESETS } from '../scenes';
 import { AnnotationOverlay } from '../ui/annotations';
+import { LightOverlay } from '../ui/lightOverlay';
 import { isModelFile } from '../ui/dropzone';
 import { createPanel } from '../ui/panel';
+import { createReport } from '../ui/report';
 import { loadModel } from '../viewer/loadModel';
 import { budgetWarnings, formatCount, type ModelStats } from '../viewer/modelStats';
 import { Viewer } from '../viewer/Viewer';
@@ -35,6 +38,7 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
       <dl class="stats"></dl>
     </aside>
     <div class="panel-host"></div>
+    <div class="report-host"></div>
     <div class="pill hover-label" hidden></div>
     <div class="pill status" role="status" hidden></div>
     <div class="empty-local" hidden>
@@ -72,15 +76,46 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
 
   let viewer: Viewer | null = null;
   let overlay: AnnotationOverlay | null = null;
+  let lightOverlay: LightOverlay | null = null;
+  let currentLightPath: Project['lightPath'] = [];
   let panel: ReturnType<typeof createPanel> | null = null;
   let currentId: string | null = null;
   let localFile: File | null = null;
+  let report: ReturnType<typeof createReport> | null = null;
+  let active = false;
+  let tourTimer = 0;
+  let checked = new Set<Object3D>();
+  let currentAnnotations: Project['annotations'] = [];
 
   function ensureViewer(): Viewer {
     if (viewer) return viewer;
     viewer = new Viewer($('.viewport'));
-    overlay = new AnnotationOverlay(stage, viewer, () => [$('.info'), $('.panel-host'), strip]);
-    viewer.events.onFrame = () => overlay?.update();
+    report = createReport($('.report-host'), { onPrev: () => step(-1), onNext: () => step(1), onClose: exitInspect });
+    overlay = new AnnotationOverlay(stage, viewer, () => [$('.info'), $('.panel-host'), report!.element, strip]);
+    lightOverlay = new LightOverlay(stage, viewer);
+    lightOverlay.setActive(false);
+    lightOverlay.onResult = (result) => {
+      if (result === 'solved') {
+        viewer!.setBeam(lightOverlay!.centres());
+        showStatus('光路贯通 · The light passes through');
+      } else if (result === 'miss') {
+        showStatus('顺序不对，重新来 · Not that way, start again', true);
+      } else {
+        status.hidden = true;
+      }
+    };
+    viewer.events.onFrame = () => {
+      overlay?.update();
+      lightOverlay?.update();
+    };
+    viewer.events.onSelect = (name) => {
+      if (!name || lightOverlay?.active) return;
+      const index = viewer!.parts().findIndex((part) => (part.name || '(unnamed mesh)') === name);
+      if (index >= 0) {
+        stopTour();
+        inspectPart(index);
+      }
+    };
     viewer.events.onHover = (name) => {
       hoverLabel.hidden = !name;
       hoverLabel.textContent = name ?? '';
@@ -89,11 +124,114 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
     panel = createPanel($('.panel-host'), viewer, {
       onBackdrop: setBackdrop,
       onCallouts: (visible) => overlay?.setVisible(visible),
+      onTour: () => (tourTimer ? stopTour() : startTour()),
+      onExit: exitInspect,
+      onLight: () => setLightMode(!lightOverlay?.active),
     });
     return viewer;
   }
 
   const backdropArt = $('.backdrop-art');
+
+  /** Look at one part: ghost the rest, fly to it and list what was checked. */
+  function inspectPart(index: number) {
+    const v = viewer;
+    if (!v || !report) return;
+    const parts = v.parts();
+    if (!parts.length) return;
+    if (lightOverlay?.active) setLightMode(false);
+    const part = parts[((index % parts.length) + parts.length) % parts.length];
+    const data = v.reportFor(part);
+    if (!data) return;
+    v.focusPart(part);
+    overlay?.setVisible(false); // the callouts would crowd the close-up
+    checked.add(part);
+    const name = part.name || '(unnamed mesh)';
+    const note = currentAnnotations?.find((a) => a.part === name);
+    report.show({
+      index: parts.indexOf(part),
+      total: parts.length,
+      checked: checked.size,
+      name: note ? `${note.label} · ${name}` : name,
+      note: note?.note,
+      report: data,
+    });
+  }
+
+  function step(direction: number) {
+    stopTour();
+    const v = viewer;
+    if (!v) return;
+    const parts = v.parts();
+    const at = v.focus ? parts.indexOf(v.focus) : direction > 0 ? -1 : 0;
+    inspectPart(at + direction);
+  }
+
+  function exitInspect() {
+    stopTour();
+    viewer?.focusPart(null);
+    report?.hide();
+    overlay?.setVisible(panel?.state.callouts ?? true);
+  }
+
+  /** The light-path game: join the glowing points in the order the light travels. */
+  function setLightMode(on: boolean) {
+    const v = viewer;
+    if (!v || !lightOverlay || !panel) return;
+    if (on && !lightOverlay.length) return;
+    if (on) exitInspect();
+    lightOverlay.setActive(on);
+    v.setBeam(null);
+    overlay?.setVisible(!on && panel.state.callouts);
+    panel.setLight(lightOverlay.length > 0, on);
+    if (on) {
+      const ends = lightOverlay.ends;
+      showStatus(ends ? `按光的方向依次点亮，从「${ends[0]}」到「${ends[1]}」 · Join the points in the light's order` : '按光的方向依次点亮 · Join the points in order');
+    } else {
+      status.hidden = true;
+    }
+  }
+
+  function stopTour() {
+    window.clearInterval(tourTimer);
+    tourTimer = 0;
+    panel?.setTouring(false);
+  }
+
+  /** Walk through every part in turn, a few seconds each. */
+  function startTour() {
+    const v = viewer;
+    if (!v) return;
+    checked = new Set();
+    let index = 0;
+    inspectPart(0);
+    panel?.setTouring(true);
+    tourTimer = window.setInterval(() => {
+      index++;
+      if (index >= v.parts().length) {
+        stopTour();
+        showStatus(`${v.parts().length} 个部件检查完成 · Inspection complete`);
+        return;
+      }
+      inspectPart(index);
+    }, 3400);
+  }
+
+  window.addEventListener('keydown', (event) => {
+    if (active && lightOverlay?.active && event.key === 'Escape') {
+      setLightMode(false);
+      event.preventDefault();
+      return;
+    }
+    if (!active || !viewer?.focus || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.target instanceof HTMLElement && event.target.closest('input, select, textarea')) return;
+    if (event.key === 'Escape') exitInspect();
+    else if (event.key === 'ArrowRight') step(1);
+    else if (event.key === 'ArrowLeft') step(-1);
+    else return;
+    event.preventDefault();
+    // Capture phase: lil-gui stops key events at its own root, which would swallow them while a panel button has focus.
+  }, true);
 
   /** Built-in backdrops are pure CSS; custom ones show the image or loop from src/assets/backdrops/. */
   function setBackdrop(id: BackdropId) {
@@ -173,7 +311,7 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
       } else {
         v.setModel(PRESETS[project.preset ?? project.category]());
       }
-      afterLoad(project.annotations, project.backdrop ?? 'paper');
+      afterLoad(project.annotations, project.backdrop ?? DEFAULT_BACKDROP, project.lightPath);
     } catch (error) {
       fail(error);
     }
@@ -189,7 +327,7 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
     try {
       const { scene, animations } = await loadModel(url, (f) => showStatus(`载入中 · Loading… ${Math.round(f * 100)}%`));
       v.setModel(scene, animations);
-      afterLoad([], 'paper');
+      afterLoad([], DEFAULT_BACKDROP);
     } catch (error) {
       fail(error);
     } finally {
@@ -197,8 +335,16 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
     }
   }
 
-  function afterLoad(annotations: Project['annotations'], backdropId: BackdropId) {
+  function afterLoad(annotations: Project['annotations'], backdropId: BackdropId, lightPath: Project['lightPath'] = []) {
+    currentLightPath = lightPath;
     const v = viewer!;
+    stopTour();
+    report?.hide();
+    checked = new Set();
+    currentAnnotations = annotations;
+    lightOverlay!.set(currentLightPath);
+    lightOverlay!.setActive(false);
+    panel!.setLight(lightOverlay!.length > 0, false);
     panel!.resetForModel(backdropId);
     setBackdrop(backdropId);
     overlay!.set(annotations);
@@ -246,6 +392,7 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
     reject: (name: string) => showStatus(`${name} 不是 .glb / .gltf 文件 · not a .glb or .gltf file`, true),
     enter(route: Route) {
       if (route.room !== 'inspect') return;
+      active = true;
       const id = route.id ?? projects[0]?.id ?? LOCAL_ID;
       ensureViewer().resume();
       if (id === currentId && element.dataset.state === 'ready') return;
@@ -261,6 +408,9 @@ export function createInspect(projects: Project[]): Room & { loadFile(file: File
       else showEmptyLocal();
     },
     leave() {
+      active = false;
+      if (lightOverlay?.active) setLightMode(false);
+      stopTour();
       viewer?.pause();
     },
   };

@@ -18,6 +18,9 @@ export const VIEW_MODE_LABELS: Record<ViewMode, string> = {
 export class MaterialSwitcher {
   private originals = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
   private overrides: Record<Exclude<ViewMode, 'shaded'>, THREE.Material>;
+  /** Faint cobalt stand-in for every mesh outside the focused part. */
+  private ghost = new THREE.MeshBasicMaterial({ color: 0x2a3fe0, transparent: true, opacity: 0.08, depthWrite: false });
+  private focus: Set<THREE.Mesh> | null = null;
   mode: ViewMode = 'shaded';
 
   constructor(root: THREE.Object3D) {
@@ -39,8 +42,18 @@ export class MaterialSwitcher {
 
   setMode(mode: ViewMode): void {
     this.mode = mode;
+    this.apply();
+  }
+
+  /** Ghost every mesh that is not in `meshes`; pass null to show everything again. */
+  setFocus(meshes: Iterable<THREE.Mesh> | null): void {
+    this.focus = meshes ? new Set(meshes) : null;
+    this.apply();
+  }
+
+  private apply(): void {
     for (const [mesh, original] of this.originals) {
-      mesh.material = mode === 'shaded' ? original : this.overrides[mode];
+      mesh.material = this.focus && !this.focus.has(mesh) ? this.ghost : this.mode === 'shaded' ? original : this.overrides[this.mode];
     }
   }
 
@@ -50,7 +63,9 @@ export class MaterialSwitcher {
   }
 
   dispose(): void {
+    this.focus = null;
     this.setMode('shaded');
+    this.ghost.dispose();
     for (const material of Object.values(this.overrides)) {
       const map = (material as THREE.MeshBasicMaterial).map;
       map?.dispose();
